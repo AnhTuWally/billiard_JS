@@ -15,22 +15,37 @@ body {
 /* Scale canvas with resize attribute to full size */
 canvas[resize] {
     width: 100%;
-    height: 100%;
+    height: 60%;
 }
 </style>
 
 <html>
 <head>
     
+    <!-- LOADING LIBRARIES -->
     <!-- Load the Paper.js library -->
     <script type="text/javascript" src="./Modules/paper-full.js"></script>
-    
     <!-- Load the Math.js library -->
     <script type="text/javascript" src="./Modules/math.js"></script>
     <!-- Define inlined PaperScript associate it with b_table -->
     <script type="text/javascript" src="./Modules/myTable.js" canvas = "b_table"></script>
-
+    
+    
+    <!-- CANVAS FOR DRAWING -->
     <canvas id="b_table" resize="true"></canvas>
+
+    <!-- TABLE -->
+    
+    Table Width: <input type="text", name="table_width"  value="700" id="table_width"><br>
+    Table Height:<input type="text", name="table_height" value="300" id="table_height"><br>
+    
+    <br>
+
+    Initial Position:    <input type="text", name="position" value="200, 100" id="position"><br>
+    Initial Heading:     <input type="text", name="heading"  value="200, 200" id="heading"><br>
+    Number of Iterations:<input type="text", name="num_iter" value="100" id="num_iter"><br>
+    <button onclick="drawRect()"> Run </button> <br>
+    
 </body>
 </html>
 

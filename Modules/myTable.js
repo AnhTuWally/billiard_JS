@@ -6,6 +6,8 @@ const rot_90 = [ [0, -1],
 
 const tol = 10e-6;
 
+const ul_corner = [50, 50]; // upper left corner
+
 xvToEq = function(xv){
     const x = xv[0];
     const v = xv[1];
@@ -194,16 +196,38 @@ idxSmallest = function(arr){
     return output_idx
 }
 
-window.onload = function() {
-	// Setup directly from canvas id:
-	paper.setup('b_table');
+parseCord = function(cord){
+    /*
+     * Parse coord in the form of (x, y)
+     */
+    cord = cord.split(',');
+    return cord.map(parseFloat)
+}
+
+drawRect = function() {
     
+    paper.clear();
+
+    paper.setup('b_table');
+
+    // GATHER INPUT INFO
+    
+    var w = parseInt(document.getElementById('table_width').value);
+    var h = parseInt(document.getElementById('table_height').value);
+
+    var initial_position = parseCord(document.getElementById('position').value);
+    
+    initial_position = math.add(ul_corner, initial_position);
+    
+
+
+    var initial_heading  = parseCord(document.getElementById('heading').value);
+    var particle = [ initial_position, initial_heading ];
+
+    var num_iter  = parseInt(document.getElementById('num_iter').value);
+
     // DRAW RECTANGLE
     
-    var ul_corner = [100, 100]; // upper left corner
-    var w = 700; // width
-    var h = 300; // height
-
     var walls =[
                     [ ul_corner,                            [w, 0]  ],
                     [ [ul_corner[0] + w, ul_corner[1]],     [0, h]  ],
@@ -214,11 +238,10 @@ window.onload = function() {
     var draw_walls = walls.map(function(x) {return drawVector(x, 1, 'blue')});
     
     // Initialization
-    var particle = [ [500, 321], [-1.25, -90] ];
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
 
     // BEGIN LOOP
-    for ( var  lp = 0; lp < 200; lp++ ){
+    for ( var  lp = 0; lp < num_iter; lp++ ){
         v_out_lst = walls.map(function(x) {return vectorOut(particle, x)});
         // console.log(v_out_lst)
         
@@ -247,5 +270,11 @@ window.onload = function() {
         particle = v_out[0];
     }
 }
+
+window.onload = function() {
+	// Setup directly from canvas id:
+    drawRect();
+}
+
 
 
