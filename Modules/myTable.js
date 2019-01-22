@@ -1,91 +1,251 @@
 // Make the paper scope global, by injecting it into window:
 paper.install(window);
 
-const wall = [[100, 100], [100, 200], [500, 200], [500, 100]];
+const rot_90 = [ [0, -1],
+                 [1,0  ]];
 
-vectorOut = function(v, n){
+const tol = 10e-6;
+
+xvToEq = function(xv){
+    const x = xv[0];
+    const v = xv[1];
+
+    try{
+        const m = v[1]/v[0];
+
+        if (Math.abs(m) > 10e10) {throw new Error('Undefined slop bc of big number');}
+        return [ [m, -1, 0], (m*x[0] - x[1])]
+    }
+    catch(err){
+        // console.log("Undefined slope");
+        return [ [1, 0, 0], x[0] ]
+    }
+}
+
+collide = function(p, w){
     /*
-    var v = [x0, y0];
-    var n = [x1, y1];
-    v is the vector of the particle
-    n is the normal vector of the wall
-    v - 2(n . v)n 
-	n need to be normalized
-    */
-    return  math.subtract(v, math.multiply(2 * math.dot(n,v), n));
+     * p : particle
+     * w : wall
+     */
+    // console.log(w);
+    const x_p = p[0];
+    const v_p = p[1];
+    
+    const w_Ab = xvToEq(w);
+
+    const mat_A = [ 
+                    [1,     0,      -v_p[0]],
+                    [0,     1,      -v_p[1]],
+                    w_Ab[0],
+                  ];
+
+    const vec_b = [x_p[0], x_p[1], w_Ab[1]];
+    
+    // console.log(mat_A);
+    // console.log(vec_b);
+
+    return math.transpose(math.lusolve(mat_A, vec_b))[0]
 }
 
 normalize = function(v){
-	/*
-	input: vector
-	output: normalized vector
-	*/
-	return math.divide(v, math.norm(v))
+    /*
+    input: vector
+    output: normalized vector
+    */
+    return math.divide(v, math.norm(v))
 }
 
+vectorOut = function(ptc, w){
+    /*
+     * FUNCTION: 
+     * - Calculating the collision point, reflected vector, and collution time 
+     * INPUT:
+     * ptc 
+     * -[ [x_0, y_0], [v_x0, v_y0] ]
+     * -the vector of the particle
+     * w
+     * -[ [x_w0, y_w0], [wx, wy] ];
+     * -the vector of the wall
+
+     * OUTPUT:
+     * [ [x_1, y_1], [v_x1, v_y1], t]       
+     */
+    
+    try{
+        // Solving for colliding point
+        var sol = collide(ptc, w);
+        
+        // CASE 1: t < 0
+        if (sol[2] < 0) {
+            return [ [[sol[0], sol[1]], [Number.NaN, Number.NaN]], sol[2] ];
+        }
+        
+        // CASE 3: t >=0
+        const v = normalize(ptc[1]); // normalize v of particle
+        const n = normalize( math.multiply( rot_90 , w[1] ) ); // normalize n of wall
+        const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n));
+
+        return [ [[sol[0], sol[1]], v_out], sol[2] ];
+
+    } catch( err ) {
+        // CASE 3: No Solution
+        console.log( err );
+        return [ [[Number.NaN, Number.NaN], [Number.NaN, Number.NaN]], -1 ];
+    }
+}
+
+
 nextPt = function(pt, v, c=1){
-	v = math.multiply(c, v);
+	/*
+     * Calculating the next point based on current pos and vector
+     */
+    
+    v = math.multiply(c, v);
 	return math.add(pt, v);
+}
+
+nextPt2 = function(xv, t){
+    /*
+     * Calculating the next point at time t
+     */
+    const x = xv[0];
+    const v = xv[1];
+
+    x[0] = x[0] + t*v[0];
+    x[1] = x[1] + t*v[1];
+
+    return [ [x[0], x[1]], v ];
+}
+
+drawVector = function(xv, c=1, sc = 'black', draw_root = false){
+    /*
+     * Draw the path given the current pos and vector
+     */
+    const x = xv[0];
+    const v = xv[1];
+    
+    if (draw_root){
+        var rt = new Path.Circle(new Point(x[0], x[1]), 3);
+        rt.strokeColor = 'green'; // root
+    }
+	const path =  new Path.Line({
+		from: x,
+		to:   nextPt(x, v, c),
+		strokeColor: sc,
+		selected: false
+	});	
+
+    return [rt, path]
+}
+
+drawPath = function(start, end, c=1, sc = 'red', draw_root = true){
+    /*
+     * Draw the path given the current pos and vector
+     */
+    if (draw_root){
+        var rt = new Path.Circle(new Point(start), 3);
+        rt.strokeColor = 'green'; // root
+    }
+	const path =  new Path.Line({
+		from: start,
+		to:   end,
+		strokeColor: sc,
+		selected: false
+	});	
+
+    return [rt, path]
+}
+// MISC function
+ptsToEq = function(x0, x1){
+    /*
+     * convert two points to parametrix array [x, y, t]
+     */
+    try{
+        const m = (x1[1] - x0[1]) / (x1[0] - x0[0]);
+        return [ [m, -1, 0], (m*x0[0]- x0[1]) ]
+    }
+    catch(err){
+        // console.log("Undefined slope");
+        return [ [1, 0, 0], x0[0] ]
+    }
+    
+}
+
+idxSmallest = function(arr){
+    /*
+     * Smallest positive index
+     */
+
+    var output_idx = [];
+
+    var num, diff;
+    
+    var pos_arr = arr.filter(function(x){ return x>0 })
+    var smallest   = Math.min(...pos_arr);
+    
+    for ( var idx = 0; idx < arr.length; idx++ ){
+        num = arr[idx];    
+        if ( (num > 0) && Math.abs(num - smallest) < tol ){
+            output_idx.push(idx);
+        }
+    }
+
+    // console.log(output_idx);
+    return output_idx
 }
 
 window.onload = function() {
 	// Setup directly from canvas id:
 	paper.setup('b_table');
     
-    // Initialize path
-	var path = new Path();
-	path.strokeColor = 'black';
-	for ( var i = 0; i < wall.length; i++ ){
-        path.add(new Point(wall[i]));
-    console.log(wall[i])
-    }
-    path.closed = true;
-    path.fullySelected = true;
-
-
-    // http://mathjs.org/docs/reference/functions/lusolve.html
-    const a = [[-2, 3], [2, 1]];
-    const b = [11, 9];
-    const x = math.lusolve(a, b);  // [[2], [5]]
-    console.log(x);
-
+    // DRAW RECTANGLE
     
-    const a1 = [[1, 0], [2, 0]];
-    const b1 = [11, 9];
-    try{
-        const x1 = math.lusolve(a1, b1);
-        console.log(x1);
-    }
-    catch( err ){
-        console.log(err.message); // system cannot be solved
-    }
+    var ul_corner = [100, 100]; // upper left corner
+    var w = 700; // width
+    var h = 300; // height
 
-	console.log(vectorOut([5,-1], [0, 1]));
-	
-	var n = normalize([5, 1]);
-	var v = [2, -1];	
-	var v2 = vectorOut(v, n);
-		
-	var mirror = new Path.Line({
-		from: [100, 500],
-		to:   nextPt([100, 500], n, 100),
-		strokeColor: 'black',
-		selected: true
-	});	
+    var walls =[
+                    [ ul_corner,                            [w, 0]  ],
+                    [ [ul_corner[0] + w, ul_corner[1]],     [0, h]  ],
+                    [ [ul_corner[0] + w, ul_corner[1]+h],   [-w, 0] ],
+                    [ [ul_corner[0],     ul_corner[1]+h],   [0, -h] ]
+                 ]
+    
+    var draw_walls = walls.map(function(x) {return drawVector(x, 1, 'blue')});
+    
+    // Initialization
+    var particle = [ [500, 321], [-1.25, -90] ];
+    var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
 
-	console.log(nextPt([100, 500], n, 50));	
-	
-	var v_in = new Path.Line({
-		from: [100, 500],
-		to:   nextPt([100, 500], v, 100),
-		strokeColor: 'black',
-		selected: false
-	});	
-	
-	var v_out = new Path.Line({
-		from: [100, 500],
-		to:   nextPt([100, 500], v2, 100),
-		strokeColor: 'blue',
-		selected: false
-	});	
+    // BEGIN LOOP
+    for ( var  lp = 0; lp < 200; lp++ ){
+        v_out_lst = walls.map(function(x) {return vectorOut(particle, x)});
+        // console.log(v_out_lst)
+        
+        t_col = v_out_lst.map(function(x) {return x[1]});
+
+        // console.log(t_col);
+        idx_wall = idxSmallest(t_col);
+        w = walls[idx_wall[0]];
+        v_out = vectorOut(particle, w);
+
+        // DRAW
+        start = new Point(particle[0]);
+        end = new Point(v_out[0][0])
+
+        path = drawPath(start, end);
+        
+        v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
+
+        // NEW POS
+        if ( idx_wall.length > 1 ) {
+            // Bounce to the corner
+            // v_out[0] = nextPt2( particle, v_out[1] - 3*tol); 
+            v_out[0][1] = math.multiply(-1, particle[1]);
+        }
+        
+        particle = v_out[0];
+    }
 }
+
+
