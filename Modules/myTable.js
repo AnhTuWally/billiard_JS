@@ -6,7 +6,7 @@ const rot_90 = [ [0, -1],
 
 const tol = 10e-6;
 
-const ul_corner = [50, 50]; // upper left corner
+const ul_corner = [0, 0]; // upper left corner
 
 xvToEq = function(xv){
     const x = xv[0];
@@ -217,7 +217,7 @@ drawRect = function() {
 
     var initial_position = parseCord(document.getElementById('position').value);
     
-    initial_position = math.add(ul_corner, initial_position);
+    // initial_position = math.add(ul_corner, initial_position);
     
 
 
@@ -271,9 +271,43 @@ drawRect = function() {
     }
 }
 
+getTangen = function(r){
+
+}
+
+drawCircle = function(){
+    paper.clear();
+
+    paper.setup('b_table');
+
+    // GATHER INPUT INFO
+    
+    var w = parseInt(document.getElementById('table_width').value);
+    var h = parseInt(document.getElementById('table_height').value);
+
+    var initial_position = parseCord(document.getElementById('position').value);
+    
+    initial_position = math.add(ul_corner, initial_position);
+    
+
+    var initial_heading  = parseCord(document.getElementById('heading').value);
+    var particle = [ initial_position, initial_heading ];
+
+    var num_iter  = parseInt(document.getElementById('num_iter').value);
+
+    // DRAW CIRCLE
+    var center = new Point(w, w);
+    var cle = new Path.Circle(center, w);
+     
+    cle.strokeColor = 'black';
+
+}
+
 window.onload = function() {
 	// Setup directly from canvas id:
-    drawRect();
+    //drawRect();
+    drawCircle();
+
 }
 
 
