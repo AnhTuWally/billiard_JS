@@ -8,6 +8,8 @@ const tol = 10e-6;
 
 const ul_corner = [0, 0]; // upper left corner
 
+var states = [];
+
 xvToEq = function(xv){
     const x = xv[0];
     const v = xv[1];
@@ -140,7 +142,7 @@ drawVector = function(xv, c=1, sc = 'black', draw_root = false){
     return [rt, path]
 }
 
-drawPath = function(start, end, c=1, sc = 'red', draw_root = true){
+drawPath = function(start, end, c=1, sc = 'blue', draw_root = true){
     /*
      * Draw the path given the current pos and vector
      */
@@ -154,7 +156,7 @@ drawPath = function(start, end, c=1, sc = 'red', draw_root = true){
 		strokeColor: sc,
 		selected: false
 	});	
-
+	
     return path
 }
 // MISC function
@@ -239,6 +241,8 @@ drawRect = function() {
     
     // Initialization
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
+	
+	states = [];  //reset states
 
     // BEGIN LOOP
     for ( var  lp = 0; lp < num_iter; lp++ ){
@@ -266,8 +270,9 @@ drawRect = function() {
             // v_out[0] = nextPt2( particle, v_out[1] - 3*tol); 
             v_out[0][1] = math.multiply(-1, particle[1]);
         }
-        
+
         particle = v_out[0];
+		states.push(particle); //append new state
     }
 }
 
@@ -308,7 +313,6 @@ reflect = function(ptc, n){
     const v_out =  math.subtract(v, math.multiply(2 * math.dot(n_vec, v), n_vec));
 
     return [n[0], v_out];
-
 }
 
 drawCircle = function(){
@@ -342,6 +346,8 @@ drawCircle = function(){
     var path, t_res, n, start, end, v_out ;
     
     // -----------------
+	
+	states = [];  //reset states
 
     for (var i = 0; i < num_iter; i++){
     
@@ -357,20 +363,46 @@ drawCircle = function(){
 
         n = [end, vecFromPts(end, circle[0])];
         particle = reflect(particle, n);
-        
+		states.push(particle); //append new state
         //drawVector(particle, 1000, 'red');
     }
     
 }
 
-window.onload = function() {
-	// Setup directly from canvas id:
-    //drawRect();
-    drawCircle();
+exportSVG = function(){
     var svg = paper.project.exportSVG({asString: true});
     console.log(svg);
     var blob = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
-    saveAs(blob, 'image.svg');
+    saveAs(blob, 'billiard.svg');
+}
+
+run = function(){
+    var table_shape = document.querySelector('input[name="table_shape"]:checked').value;
+    console.log(table_shape);
+
+    if (table_shape === 'rectangle'){
+        drawRect();
+    }else if (table_shape === 'circle'){
+        drawCircle();
+    }
+}
+
+exportStates = function(){
+	states = states.map(function(x) {return x.flat()});
+
+	var lineArray = [];
+	states.forEach(function (infoArray, index) {
+	    var line = infoArray.join(",");
+	    lineArray.push(line);
+	});
+	var csvContent = lineArray.join("\n");
+	console.log(csvContent);
+	var blob = new Blob([csvContent], {type: "data:text/csv;charset=utf-8"});
+	saveAs(blob, 'states.csv');
+}
+
+window.onload = function() {
+    drawRect();
 }
 
 

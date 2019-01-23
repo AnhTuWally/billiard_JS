@@ -27,25 +27,47 @@ canvas[resize] {
     <script type="text/javascript" src="./Modules/paper-full.js"></script>
     <!-- Load the Math.js library -->
     <script type="text/javascript" src="./Modules/math.js"></script>
+    <script type="text/javascript" src="./Modules/FileSaver.js"></script>
     <!-- Define inlined PaperScript associate it with b_table -->
     <script type="text/javascript" src="./Modules/myTable.js" canvas = "b_table"></script>
-    
-    
+
+
     <!-- CANVAS FOR DRAWING -->
     <canvas id="b_table" resize="true" style="padding: 10px 10px"></canvas>
 
     <!-- TABLE -->
-    
-    Table Width: <input type="text", name="table_width"  value="700" id="table_width"><br>
-    Table Height:<input type="text", name="table_height" value="300" id="table_height"><br>
-    
-    <br>
+    <div style="padding:5px">
+            <input type="radio" id="rectangle" name="table_shape" value="rectangle" checked>
+            <label for="rectangle">Rectangle</label>
+            <input type="radio" id="circle" name="table_shape" value="circle">
+            <label for="circle">circle</label>
+    </div>
 
-    Initial Position:    <input type="text", name="position" value="200, 100" id="position"><br>
-    Initial Heading:     <input type="text", name="heading"  value="200, 200" id="heading"><br>
-    Number of Iterations:<input type="text", name="num_iter" value="100" id="num_iter"><br>
-    <button onclick="drawCircle()"> Run </button> <br>
-    
+    <table>
+        <tr> 
+            <td>Table Width/Radius:</td>
+            <td><input type="text", name="table_width"  value="200" id="table_width"></td>
+        </tr>
+        <tr>
+            <td>Table Height:</td>
+            <td><input type="text", name="table_height" value="300" id="table_height"></td>
+        </tr>
+        <tr>
+            <td>Initial Position:</td>
+            <td><input type="text", name="position" value="100, 100" id="position"></td>
+        </tr>
+        <tr>
+            <td>Initial Heading:</td>
+            <td><input type="text", name="heading"  value="100, 300" id="heading"></td>
+        </tr>
+        <tr>
+            <td>Number of Iterations:</td>
+            <td><input type="text", name="num_iter" value="100" id="num_iter"></td>
+        </tr>
+    </table>
+        <button onclick="run()" id="run"> Run </button>
+        <button onclick="exportSVG()" id="export_svg">Export SVG</button>
+        <button onclick="exportStates()" id="export_states">Export States</button>
 </body>
 </html>
 
