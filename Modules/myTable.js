@@ -148,14 +148,14 @@ drawPath = function(start, end, c=1, sc = 'red', draw_root = true){
         var rt = new Path.Circle(new Point(start), 3);
         rt.strokeColor = 'green'; // root
     }
-	const path =  new Path.Line({
+	var path =  new Path.Line({
 		from: start,
 		to:   end,
 		strokeColor: sc,
 		selected: false
 	});	
 
-    return [rt, path]
+    return path
 }
 // MISC function
 ptsToEq = function(x0, x1){
@@ -271,7 +271,43 @@ drawRect = function() {
     }
 }
 
-getTangen = function(r){
+
+circleCollide = function(circle, line){
+    
+    /*
+     *  https://math.stackexchange.com/questions/311921/get-location-of-vector-circle-intersection
+     */
+    var center = circle[0];
+    var r = circle[1];
+
+    var x = line[0];
+    var v = line[1];
+
+    var a = v[0]**2 + v[1]**2;
+    var b = 2*( v[0]*(x[0] - center[0]) + v[1]*(x[1] - center[1]) );
+    var c = (x[0] - center[0])**2 + (x[1] - center[1])**2 - r**2;
+
+    var delta = b**2 - 4 * a * c;
+
+    if (delta < 0){
+        return Number.NaN;
+    } else{
+        delta = math.sqrt(delta)
+        return [(-b - delta) / (2 * a), (-b + delta) / (2 * a)]
+    }
+}
+
+vecFromPts = function(x, y){
+    return math.subtract(y, x);
+}
+
+reflect = function(ptc, n){
+        
+    const v = normalize(ptc[1]); // normalize v of particle
+    const n_vec = normalize(n[1]); // normalize n of wall
+    const v_out =  math.subtract(v, math.multiply(2 * math.dot(n_vec, v), n_vec));
+
+    return [n[0], v_out];
 
 }
 
@@ -300,14 +336,41 @@ drawCircle = function(){
     var cle = new Path.Circle(center, w);
      
     cle.strokeColor = 'black';
+    
+    var circle = [[w, w], w];
 
+    var path, t_res, n, start, end, v_out ;
+    
+    // -----------------
+
+    for (var i = 0; i < num_iter; i++){
+    
+        t_res = circleCollide(circle, particle);
+        t_res = t_res.filter(function(x){return x > 0});
+    
+        start = new Point(particle[0]);
+        end = nextPt2( particle, t_res[0] - tol)[0]; 
+        
+        path = drawPath(start, end);
+
+        //console.log(path);
+
+        n = [end, vecFromPts(end, circle[0])];
+        particle = reflect(particle, n);
+        
+        //drawVector(particle, 1000, 'red');
+    }
+    
 }
 
 window.onload = function() {
 	// Setup directly from canvas id:
     //drawRect();
     drawCircle();
-
+    var svg = paper.project.exportSVG({asString: true});
+    console.log(svg);
+    var blob = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
+    saveAs(blob, 'image.svg');
 }
 
 
