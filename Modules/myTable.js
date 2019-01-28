@@ -494,7 +494,6 @@ envSetup = function(){
 
 clearAll = function(){
     paper.clear();
-
     paper.setup('b_table');
 
 	wall_lst_key = Object.keys(wall_lst);
@@ -502,6 +501,8 @@ clearAll = function(){
 		removeWall(wall_lst_key[i]);	
 	}
 	wall_count = 0;
+
+    envSetup();
 	
 }
 
@@ -610,13 +611,13 @@ drawPoly = function(){
 
 window.onload = function() {
   	envSetup();
-	addWall0('0, 0, 300, 0');
+	addWall0('13, 100, 300, 0');
 	addWall0('300, 0, 500, 53');
 	addWall0('500, 53, 300, 200');
 	addWall0('300, 200, 300, 253');
 	addWall0('300, 253, 220, 300');
 	addWall0('220, 300, 300, 300');
 	addWall0('300, 300, 0, 400');
-	addWall0('0, 400, 0, 0');
+	addWall0('0, 400, 13, 100');
    	drawPoly();
 }
