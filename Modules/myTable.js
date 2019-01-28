@@ -118,8 +118,27 @@ collide = function(p, w){
     
     // console.log(mat_A);
     // console.log(vec_b);
+    
+    var res = math.transpose(math.lusolve(mat_A, vec_b))[0];
+    
+    if(res[2] < 0){
+        res = [0,0, -1];
+    } else {
+        var a_pt = w.slice(0, 2);
+        var b_pt = w.slice(2, 4);
+        
+        var c_pt = res.slice(0,2);
 
-    return math.transpose(math.lusolve(mat_A, vec_b))[0]
+        var ab = math.distance(a_pt, b_pt);
+        var ac = math.distance(a_pt, c_pt);
+        var bc = math.distance(b_pt, c_pt);
+        
+        if (math.abs(ac + bc - ab) > tol){
+            res = [0, 0, -1];
+        }
+    }
+
+    return res;
 }
 
 normalize = function(v){
@@ -149,13 +168,14 @@ vectorOut = function(ptc, w){
     try{
         // Solving for colliding point
         var sol = collide(ptc, w);
-                
+        
+
         // CASE 1: t < 0
         if (sol[2] < 0) {
             return [ [[sol[0], sol[1]], [Number.NaN, Number.NaN]], sol[2] ];
         }
         
-        // CASE 3: t >=0
+        // CASE 2: t >=0
         const v = normalize(ptc[1]); // normalize v of particle
         const n = normalize( math.multiply( rot_90 , math.subtract(w.slice(0,2), w.slice(2,4)) ) ); // normalize n of wall
         const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n));
@@ -300,14 +320,11 @@ drawRect = function() {
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
 	
 	states = [];  //reset states
-	console.log(walls);
+	// console.log(walls);
     // BEGIN LOOP
     for ( var  lp = 0; lp < num_iter; lp++ ){
 
         v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
-
-        // console.log(v_out_lst)
-        
         t_col = v_out_lst.map(function(x) {return x[1]});
 
         // console.log(t_col);
@@ -415,7 +432,7 @@ drawCircle = function(){
 
 exportSVG = function(){
     var svg = paper.project.exportSVG({asString: true});
-    console.log(svg);
+    // console.log(svg);
     var blob = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
     saveAs(blob, 'billiard.svg');
 }
@@ -444,7 +461,7 @@ exportStates = function(){
 	    lineArray.push(line);
 	});
 	var csvContent = lineArray.join("\n");
-	console.log(csvContent);
+	// console.log(csvContent);
 	var blob = new Blob([csvContent], {type: "data:text/csv;charset=utf-8"});
 	saveAs(blob, 'states.csv');
 }
@@ -593,8 +610,13 @@ drawPoly = function(){
 
 window.onload = function() {
   	envSetup();
-	addWall0('0, 0, 400, 400');
-	addWall0('400, 400, 0, 400');
+	addWall0('0, 0, 300, 0');
+	addWall0('300, 0, 500, 53');
+	addWall0('500, 53, 300, 200');
+	addWall0('300, 200, 300, 253');
+	addWall0('300, 253, 220, 300');
+	addWall0('220, 300, 300, 300');
+	addWall0('300, 300, 0, 400');
 	addWall0('0, 400, 0, 0');
    	drawPoly();
 }
