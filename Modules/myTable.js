@@ -10,6 +10,57 @@ const ul_corner = [0, 0]; // upper left corner
 
 var states = [];
 
+var initial_vec_path;
+
+var w, h, initial_position, initial_heading, particle, num_iter;
+
+var del_x, del_y;
+// HTML STUFF
+
+var wall_lst = [];
+var wall_count = 0
+var  wall_ID, wall_lst_key;
+
+slideToVec = function(theta){
+    theta = math.unit(parseInt(theta) - 270 , 'deg');
+	
+    var x = math.round(math.cos(theta), 3);
+    var y = math.round(math.sin(theta), 3);
+
+    document.getElementById('heading').value = "(" + x + ", " + y + ")";
+
+    initial_position = parseCord(document.getElementById('position').value);
+    initial_heading  = normalize(parseCord(document.getElementById('heading').value));
+    
+    initial_heading = math.multiply(initial_heading, 30);
+
+    initial_vec_path.segments[1].point = new Point(math.add(initial_position, initial_heading));
+      
+    //drawVec();
+}
+
+/* When the user clicks on the button,
+toggle between hiding and showing the dropdown content */
+function myFunction() {
+  document.getElementById("myDropdown").classList.toggle("show");
+}
+
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+} 
+
+// BILLIARD STUFF
+
 xvToEq = function(xv){
     const x = xv[0];
     const v = xv[1];
@@ -19,6 +70,24 @@ xvToEq = function(xv){
 
         if (Math.abs(m) > 10e10) {throw new Error('Undefined slop bc of big number');}
         return [ [m, -1, 0], (m*x[0] - x[1])]
+    }
+    catch(err){
+        // console.log("Undefined slope");
+        return [ [1, 0, 0], x[0] ]
+    }
+}
+
+stToEq = function(st){
+    var start = st.slice(0,2);
+    var end   = st.slice(2,4);
+	
+	var delta = math.subtract(end, start);
+
+    try{
+        const m = delta[1]/delta[0];
+
+        if (Math.abs(m) > 10e10) {throw new Error('Undefined slop bc of big number');}
+        return [ [m, -1, 0], (m*start[0] - start[1])]
     }
     catch(err){
         // console.log("Undefined slope");
@@ -78,7 +147,7 @@ vectorOut = function(ptc, w){
     try{
         // Solving for colliding point
         var sol = collide(ptc, w);
-        
+                
         // CASE 1: t < 0
         if (sol[2] < 0) {
             return [ [[sol[0], sol[1]], [Number.NaN, Number.NaN]], sol[2] ];
@@ -132,17 +201,17 @@ drawVector = function(xv, c=1, sc = 'black', draw_root = false){
         var rt = new Path.Circle(new Point(x[0], x[1]), 3);
         rt.strokeColor = 'green'; // root
     }
-	const path =  new Path.Line({
+	var path =  new Path.Line({
 		from: x,
 		to:   nextPt(x, v, c),
 		strokeColor: sc,
 		selected: false
 	});	
 
-    return [rt, path]
+    return path
 }
 
-drawPath = function(start, end, c=1, sc = 'blue', draw_root = true){
+drawPath = function(start, end, sc = 'blue', draw_root = true){
     /*
      * Draw the path given the current pos and vector
      */
@@ -202,39 +271,25 @@ parseCord = function(cord){
     /*
      * Parse coord in the form of (x, y)
      */
+	cord = cord.replace(/[\(\)]/g, '');
     cord = cord.split(',');
     return cord.map(parseFloat)
 }
 
+
 drawRect = function() {
+    envSetup();
     
-    paper.clear();
-
-    paper.setup('b_table');
-
-    // GATHER INPUT INFO
+    w = parseInt(document.getElementById('table_width').value);
     
-    var w = parseInt(document.getElementById('table_width').value);
-    var h = parseInt(document.getElementById('table_height').value);
-
-    var initial_position = parseCord(document.getElementById('position').value);
-    
-    // initial_position = math.add(ul_corner, initial_position);
-    
-
-
-    var initial_heading  = parseCord(document.getElementById('heading').value);
-    var particle = [ initial_position, initial_heading ];
-
-    var num_iter  = parseInt(document.getElementById('num_iter').value);
+    paper.view.translate(new Point(20, 20));
 
     // DRAW RECTANGLE
-    
     var walls =[
-                    [ ul_corner,                            [w, 0]  ],
-                    [ [ul_corner[0] + w, ul_corner[1]],     [0, h]  ],
-                    [ [ul_corner[0] + w, ul_corner[1]+h],   [-w, 0] ],
-                    [ [ul_corner[0],     ul_corner[1]+h],   [0, -h] ]
+                    [ [0, 0], [w, 0]],
+                    [ [w, 0], [0, h]],
+                    [ [w, h], [-w, 0] ],
+                    [ [0, h], [0, -h] ]
                  ]
     
     var draw_walls = walls.map(function(x) {return drawVector(x, 1, 'blue')});
@@ -316,24 +371,9 @@ reflect = function(ptc, n){
 }
 
 drawCircle = function(){
-    paper.clear();
+    envSetup();
 
-    paper.setup('b_table');
-
-    // GATHER INPUT INFO
-    
-    var w = parseInt(document.getElementById('table_width').value);
-    var h = parseInt(document.getElementById('table_height').value);
-
-    var initial_position = parseCord(document.getElementById('position').value);
-    
-    initial_position = math.add(ul_corner, initial_position);
-    
-
-    var initial_heading  = parseCord(document.getElementById('heading').value);
-    var particle = [ initial_position, initial_heading ];
-
-    var num_iter  = parseInt(document.getElementById('num_iter').value);
+    paper.view.translate(new Point(20, 20));
 
     // DRAW CIRCLE
     var center = new Point(w, w);
@@ -384,7 +424,9 @@ run = function(){
         drawRect();
     }else if (table_shape === 'circle'){
         drawCircle();
-    }
+    }else if (table_shape === 'polygon'){
+		drawPoly();
+	}
 }
 
 exportStates = function(){
@@ -401,9 +443,167 @@ exportStates = function(){
 	saveAs(blob, 'states.csv');
 }
 
-window.onload = function() {
-    drawRect();
+shift_xy = function(pt, d_xy){
+    return math.add(pt, d_xy);
 }
 
+envSetup = function(){
 
+    paper.clear();
 
+    paper.setup('b_table');
+	
+    w = parseInt(document.getElementById('table_width').value);
+    h = parseInt(document.getElementById('table_height').value);
+	
+	theta = document.getElementById('theta').value;
+	
+    initial_position = parseCord(document.getElementById('position').value);
+    initial_heading  = normalize(parseCord(document.getElementById('heading').value));
+    particle = [ initial_position, initial_heading ];
+
+    initial_vec_path = drawVector(particle, 30, '#d3d3d3', true);
+
+	slideToVec(theta);	
+
+    num_iter  = parseInt(document.getElementById('num_iter').value);
+	
+}
+
+clearAll = function(){
+    paper.clear();
+
+    paper.setup('b_table');
+
+	wall_lst_key = Object.keys(wall_lst);
+	for (var i = 0; i < wall_lst_key.length; i++){
+		removeWall(wall_lst_key[i]);	
+	}
+	wall_count = 0;
+	
+}
+
+addWall0 = function(pt){
+	pt = pt.replace(/[\(\)]/g, '');
+	pt = pt.split(',');	
+
+	var start = parseCord(pt.slice(0,2).join(','));
+	var end  = parseCord(pt.slice(2,4).join(','));
+	var wall_str = "(" + start  + ') - (' + end + ")";
+	
+	if (pt.length == 4){
+		wall_ID = "WalNum" + wall_count;
+		wall_count+=1;
+		var wall_path = drawPath(start, end, 'black', false);
+		
+		wall_lst[wall_ID] = [start.concat(end), wall_path];
+		
+		var dropdown_lst = document.getElementById('myDropdown');
+						   	
+		dropdown_lst.innerHTML += "<a href='#' id='" + wall_ID + "' onclick='removeWall(\""+ wall_ID + "\")'>" + wall_str + "</a>";
+		
+	}else{console.log("Incorect format");}
+	
+}
+
+addWall = function(){
+	var pt = prompt("Enter Coordinate (x0, y0), (x1, y1): ");
+	if (pt != null){
+		pt = pt.replace(/[\(\)]/g, '');
+		pt = pt.split(',');	
+		var start = parseCord(pt.slice(0,2).join(','));
+		var end  = parseCord(pt.slice(2,4).join(','));
+		var wall_str = "(" + start  + ') - (' + end + ")";
+		
+		if (pt.length == 4){
+			wall_ID = "WalNum" + wall_count;
+			wall_count+=1;
+			var wall_path = drawPath(start, end, 'black', false);
+			
+			wall_lst[wall_ID] = [start.concat(end), wall_path];
+			
+			var dropdown_lst = document.getElementById('myDropdown');
+							   	
+			dropdown_lst.innerHTML += "<a href='#' id='" + wall_ID + "' onclick='removeWall(\""+ wall_ID + "\")'>" + wall_str + "</a>";
+			
+		}else{alert("Incorect format");}
+	}
+}
+
+removeWall = function(wall_id){
+	
+	var remove_wall = document.getElementById(wall_id);
+	
+	remove_wall.parentNode.removeChild(remove_wall);
+	
+	var del_wall_path = wall_lst[wall_id][1];
+	del_wall_path.removeSegments();
+	delete wall_lst[wall_id];
+}
+
+drawPoly = function(){
+	envSetup();
+
+    paper.view.translate(new Point(20, 20));
+
+	addWall0('300, 300, 100, 300');
+	addWall0('100, 300, 100, 100');
+	addWall0('100, 100, 300, 300');
+    //
+
+	var temp = Object.values(wall_lst).map(function(x) {return x[0]});
+	console.log(temp);
+/*
+    // DRAW RECTANGLE
+    var walls =[
+                    [ ul_corner,                            [w, 0]  ],
+                    [ [ul_corner[0] + w, ul_corner[1]],     [0, h]  ],
+                    [ [ul_corner[0] + w, ul_corner[1]+h],   [-w, 0] ],
+                    [ [ul_corner[0],     ul_corner[1]+h],   [0, -h] ]
+                 ]
+   	
+    var draw_walls = walls.map(function(x) {return drawVector(x, 1, 'blue')});
+    
+    // Initialization
+    var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
+	
+	states = [];  //reset states
+
+    // BEGIN LOOP
+    for ( var  lp = 0; lp < num_iter; lp++ ){
+        v_out_lst = walls.map(function(x) {return vectorOut(particle, x)});
+        // console.log(v_out_lst)
+        
+        t_col = v_out_lst.map(function(x) {return x[1]});
+
+        // console.log(t_col);
+        idx_wall = idxSmallest(t_col);
+        w = walls[idx_wall[0]];
+        v_out = vectorOut(particle, w);
+
+        // DRAW
+        start = new Point(particle[0]);
+        end = new Point(v_out[0][0])
+
+        path = drawPath(start, end);
+        
+        v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
+
+        // NEW POS
+        if ( idx_wall.length > 1 ) {
+            // Bounce to the corner
+            // v_out[0] = nextPt2( particle, v_out[1] - 3*tol); 
+            v_out[0][1] = math.multiply(-1, particle[1]);
+        }
+
+        particle = v_out[0];
+		states.push(particle); //append new state
+    }
+*/
+}
+
+window.onload = function() {
+   envSetup();
+   drawPoly();
+    
+}
