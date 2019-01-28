@@ -22,12 +22,14 @@ var wall_count = 0
 var  wall_ID, wall_lst_key;
 
 slideToVec = function(theta){
-    theta = math.unit(parseInt(theta) - 270 , 'deg');
-	
+    theta = parseInt(theta);	
+		
+	theta = Math.PI * theta / 180;
     var x = math.round(math.cos(theta), 3);
     var y = math.round(math.sin(theta), 3);
 
     document.getElementById('heading').value = "(" + x + ", " + y + ")";
+
 
     initial_position = parseCord(document.getElementById('position').value);
     initial_heading  = normalize(parseCord(document.getElementById('heading').value));
@@ -78,6 +80,7 @@ xvToEq = function(xv){
 }
 
 stToEq = function(st){
+
     var start = st.slice(0,2);
     var end   = st.slice(2,4);
 	
@@ -91,7 +94,7 @@ stToEq = function(st){
     }
     catch(err){
         // console.log("Undefined slope");
-        return [ [1, 0, 0], x[0] ]
+        return [ [1, 0, 0], start[0] ]
     }
 }
 
@@ -101,18 +104,17 @@ collide = function(p, w){
      * w : wall
      */
     // console.log(w);
-    const x_p = p[0];
-    const v_p = p[1];
-    
-    const w_Ab = xvToEq(w);
-
-    const mat_A = [ 
+    var x_p = p[0];
+    var v_p = p[1];
+	
+    var w_Ab = stToEq(w);
+    var mat_A = [ 
                     [1,     0,      -v_p[0]],
                     [0,     1,      -v_p[1]],
                     w_Ab[0],
                   ];
 
-    const vec_b = [x_p[0], x_p[1], w_Ab[1]];
+    var vec_b = [x_p[0], x_p[1], w_Ab[1]];
     
     // console.log(mat_A);
     // console.log(vec_b);
@@ -143,7 +145,7 @@ vectorOut = function(ptc, w){
      * OUTPUT:
      * [ [x_1, y_1], [v_x1, v_y1], t]       
      */
-    
+   	// console.log(w); 
     try{
         // Solving for colliding point
         var sol = collide(ptc, w);
@@ -155,14 +157,14 @@ vectorOut = function(ptc, w){
         
         // CASE 3: t >=0
         const v = normalize(ptc[1]); // normalize v of particle
-        const n = normalize( math.multiply( rot_90 , w[1] ) ); // normalize n of wall
+        const n = normalize( math.multiply( rot_90 , math.subtract(w.slice(0,2), w.slice(2,4)) ) ); // normalize n of wall
         const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n));
 
         return [ [[sol[0], sol[1]], v_out], sol[2] ];
 
     } catch( err ) {
         // CASE 3: No Solution
-        console.log( err );
+        console.log( 'No SOl' );
         return [ [[Number.NaN, Number.NaN], [Number.NaN, Number.NaN]], -1 ];
     }
 }
@@ -286,22 +288,24 @@ drawRect = function() {
 
     // DRAW RECTANGLE
     var walls =[
-                    [ [0, 0], [w, 0]],
-                    [ [w, 0], [0, h]],
-                    [ [w, h], [-w, 0] ],
-                    [ [0, h], [0, -h] ]
+                    [0, 0, w, 0],
+                    [w, 0, w, h],
+                    [w, h, 0, h],
+                    [0, h, 0, 0]
                  ]
     
-    var draw_walls = walls.map(function(x) {return drawVector(x, 1, 'blue')});
+    var draw_walls = walls.map(function(x) {return drawPath(x.slice(0,2), x.slice(2,4), 'red', false)});
     
     // Initialization
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
 	
 	states = [];  //reset states
-
+	console.log(walls);
     // BEGIN LOOP
     for ( var  lp = 0; lp < num_iter; lp++ ){
-        v_out_lst = walls.map(function(x) {return vectorOut(particle, x)});
+
+        v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
+
         // console.log(v_out_lst)
         
         t_col = v_out_lst.map(function(x) {return x[1]});
@@ -420,6 +424,7 @@ run = function(){
     var table_shape = document.querySelector('input[name="table_shape"]:checked').value;
     console.log(table_shape);
 
+
     if (table_shape === 'rectangle'){
         drawRect();
     }else if (table_shape === 'circle'){
@@ -427,6 +432,7 @@ run = function(){
     }else if (table_shape === 'polygon'){
 		drawPoly();
 	}
+
 }
 
 exportStates = function(){
@@ -467,7 +473,6 @@ envSetup = function(){
 	slideToVec(theta);	
 
     num_iter  = parseInt(document.getElementById('num_iter').value);
-	
 }
 
 clearAll = function(){
@@ -546,33 +551,18 @@ drawPoly = function(){
 
     paper.view.translate(new Point(20, 20));
 
-	addWall0('300, 300, 100, 300');
-	addWall0('100, 300, 100, 100');
-	addWall0('100, 100, 300, 300');
-    //
-
-	var temp = Object.values(wall_lst).map(function(x) {return x[0]});
-	console.log(temp);
-/*
-    // DRAW RECTANGLE
-    var walls =[
-                    [ ul_corner,                            [w, 0]  ],
-                    [ [ul_corner[0] + w, ul_corner[1]],     [0, h]  ],
-                    [ [ul_corner[0] + w, ul_corner[1]+h],   [-w, 0] ],
-                    [ [ul_corner[0],     ul_corner[1]+h],   [0, -h] ]
-                 ]
-   	
-    var draw_walls = walls.map(function(x) {return drawVector(x, 1, 'blue')});
+	var walls = Object.values(wall_lst).map(function(x) {return x[0]});
+	    
+    var draw_walls = walls.map(function(x) {return drawPath(x.slice(0,2), x.slice(2,4), 'red', false)});
     
     // Initialization
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
 	
 	states = [];  //reset states
-
     // BEGIN LOOP
     for ( var  lp = 0; lp < num_iter; lp++ ){
-        v_out_lst = walls.map(function(x) {return vectorOut(particle, x)});
-        // console.log(v_out_lst)
+
+        v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
         
         t_col = v_out_lst.map(function(x) {return x[1]});
 
@@ -599,11 +589,12 @@ drawPoly = function(){
         particle = v_out[0];
 		states.push(particle); //append new state
     }
-*/
 }
 
 window.onload = function() {
-   envSetup();
-   drawPoly();
-    
+  	envSetup();
+	addWall0('0, 0, 400, 400');
+	addWall0('400, 400, 0, 400');
+	addWall0('0, 400, 0, 0');
+   	drawPoly();
 }
