@@ -6,7 +6,7 @@ const rot_90 = [ [0, -1],
 
 const tol = 10e-6;
 
-const ul_corner = [0, 0]; // upper left corner
+const window_size = [800, 400]; //
 
 var states = [];
 
@@ -304,7 +304,7 @@ drawRect = function() {
     
     w = parseInt(document.getElementById('table_width').value);
     
-    paper.view.translate(new Point(20, 20));
+    // paper.view.translate(new Point(20, 20));
 
     // DRAW RECTANGLE
     var walls =[
@@ -373,8 +373,9 @@ circleCollide = function(circle, line){
     if (delta < 0){
         return Number.NaN;
     } else{
-        delta = math.sqrt(delta)
-        return [(-b - delta) / (2 * a), (-b + delta) / (2 * a)]
+        delta = math.sqrt(delta);
+        var res =  [(-b - delta) / (2 * a), (-b + delta) / (2 * a)];
+        return (res)
     }
 }
 
@@ -393,16 +394,16 @@ reflect = function(ptc, n){
 
 drawCircle = function(){
     envSetup();
+    
+    var r = math.min([window_size])*0.4;
 
-    paper.view.translate(new Point(20, 20));
-
+    var circle = [[0, 0], r];
+    
     // DRAW CIRCLE
-    var center = new Point(w, w);
-    var cle = new Path.Circle(center, w);
+    var cle = new Path.Circle([0, 0], r);
      
     cle.strokeColor = 'black';
     
-    var circle = [[w, w], w];
 
     var path, t_res, n, start, end, v_out ;
     
@@ -420,12 +421,10 @@ drawCircle = function(){
         
         path = drawPath(start, end);
 
-        //console.log(path);
 
         n = [end, vecFromPts(end, circle[0])];
         particle = reflect(particle, n);
 		states.push(particle); //append new state
-        //drawVector(particle, 1000, 'red');
     }
     
 }
@@ -466,8 +465,8 @@ exportStates = function(){
 	saveAs(blob, 'states.csv');
 }
 
-shift_xy = function(pt, d_xy){
-    return math.add(pt, d_xy);
+shiftPt = function(pt, delta){
+    return math.add(pt, delta);
 }
 
 envSetup = function(){
@@ -482,6 +481,9 @@ envSetup = function(){
 	theta = document.getElementById('theta').value;
 	
     initial_position = parseCord(document.getElementById('position').value);
+
+    //var min_max = window_size.sort();
+
     initial_heading  = normalize(parseCord(document.getElementById('heading').value));
     particle = [ initial_position, initial_heading ];
 
@@ -490,6 +492,8 @@ envSetup = function(){
 	slideToVec(theta);	
 
     num_iter  = parseInt(document.getElementById('num_iter').value);
+
+    drawCord()
 }
 
 clearAll = function(){
@@ -567,7 +571,7 @@ removeWall = function(wall_id){
 drawPoly = function(){
 	envSetup();
 
-    paper.view.translate(new Point(20, 20));
+    // paper.view.translate(new Point(20, 20));
 
 	var walls = Object.values(wall_lst).map(function(x) {return x[0]});
 	    
@@ -609,9 +613,21 @@ drawPoly = function(){
     }
 }
 
+drawCord = function(){
+    var w = window_size[0];
+    var h = window_size[1];
+
+    var x_axis = drawPath([-w/2, 0], [w/2, 0], '#D3D3D3', false);    
+    var y_axis = drawPath([0, -h/2], [0, h/2], '#D3D3D3', false);    
+    
+    
+    paper.view.translate(new Point(w/2, h/2));
+}
+
 window.onload = function() {
   	envSetup();
-	addWall0('13, 100, 300, 0');
+	
+    addWall0('13, 100, 300, 0');
 	addWall0('300, 0, 500, 53');
 	addWall0('500, 53, 300, 200');
 	addWall0('300, 200, 300, 253');
@@ -619,5 +635,6 @@ window.onload = function() {
 	addWall0('220, 300, 300, 300');
 	addWall0('300, 300, 0, 400');
 	addWall0('0, 400, 13, 100');
-   	drawPoly();
+
+    drawCircle();
 }
