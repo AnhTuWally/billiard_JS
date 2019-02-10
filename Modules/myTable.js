@@ -21,6 +21,40 @@ var wall_lst = [];
 var wall_count = 0
 var  wall_ID, wall_lst_key;
 
+// Vector/Matrix stuff
+reflect2 = function(v, w){
+    var u = math.subtract(w.slice(2,4), w.slice(0,2)); // normalize n of wall
+    var i_vec = [1, 0]; //x in pos dir aka i
+    
+    // GET THE ANGLE
+    var theta = math.acos(math.dot(u, i_vec) / (math.norm(u)*math.norm(i_vec)));
+    console.log(theta);
+    //theta = u[1] < 0 ? theta : -theta; 
+    
+    // v*R_theta
+    //Rotate to
+    var vec_1 = rotate_vec(v, theta);
+    
+    var ker = [[-1, 0],[0, 1]];
+    // v*R_theta * R_reflection
+    if(math.sin(theta)*2 < math.SQRT2){
+        ker = [[1, 0],[0, -1]];
+    }
+
+    var vec_1r = math.multiply(ker, vec_1);
+
+    // v*R_Theta*R_reflection*R_-theta
+    return rotate_vec(vec_1r, theta);
+}
+
+rotate_vec = function(v, theta){
+    //GOHERE
+    const r_theta = [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]];
+    return math.multiply(r_theta, v);
+}
+
+// OTHER STUFF
+
 slideToVec = function(theta){
     theta = parseInt(theta);	
 		
@@ -177,9 +211,10 @@ vectorOut = function(ptc, w){
         
         // CASE 2: t >=0
         const v = normalize(ptc[1]); // normalize v of particle
-        const n = normalize( math.multiply( rot_90 , math.subtract(w.slice(0,2), w.slice(2,4)) ) ); // normalize n of wall
-        const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n));
-
+        //const n = normalize( math.multiply( rot_90 , math.subtract(w.slice(0,2), w.slice(2,4)) ) ); // normalize n of wall
+        //const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n)); // CHANGE HERE: KERNEL 
+        const v_out = reflect2(v, w);
+        //console.log(v_out);
         return [ [[sol[0], sol[1]], v_out], sol[2] ];
 
     } catch( err ) {
@@ -387,6 +422,7 @@ reflect = function(ptc, n){
         
     const v = normalize(ptc[1]); // normalize v of particle
     const n_vec = normalize(n[1]); // normalize n of wall
+
     const v_out =  math.subtract(v, math.multiply(2 * math.dot(n_vec, v), n_vec));
 
     return [n[0], v_out];
@@ -423,6 +459,7 @@ drawCircle = function(){
 
 
         n = [end, vecFromPts(end, circle[0])];
+        // FIX THIS PART3
         particle = reflect(particle, n);
 		states.push(particle); //append new state
     }
@@ -494,6 +531,7 @@ envSetup = function(){
     num_iter  = parseInt(document.getElementById('num_iter').value);
 
     drawCord()
+
 }
 
 clearAll = function(){
@@ -626,7 +664,6 @@ drawCord = function(){
 
 window.onload = function() {
   	envSetup();
-	
     addWall0('13, 100, 300, 0');
 	addWall0('300, 0, 500, 53');
 	addWall0('500, 53, 300, 200');
@@ -635,6 +672,5 @@ window.onload = function() {
 	addWall0('220, 300, 300, 300');
 	addWall0('300, 300, 0, 400');
 	addWall0('0, 400, 13, 100');
-
-    drawCircle();
+    // drawCircle();
 }
