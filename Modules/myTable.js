@@ -22,36 +22,29 @@ var wall_count = 0
 var  wall_ID, wall_lst_key;
 
 // Vector/Matrix stuff
+
+rotate_mat = function(theta){
+    return r_theta = [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]]
+}
+
 reflect2 = function(v, w){
-    var u = math.subtract(w.slice(2,4), w.slice(0,2)); // normalize n of wall
-    var i_vec = [1, 0]; //x in pos dir aka i
+    // GOHERE
+    var wall_vec = math.subtract(w.slice(2,4), w.slice(0,2)); // Calculating the wall vector
+    var wall_norm = normalize([wall_vec[1], -wall_vec[0]]);
+    var j_vec = [0, 1]; //x in pos dir aka i
     
     // GET THE ANGLE
-    var theta = math.acos(math.dot(u, i_vec) / (math.norm(u)*math.norm(i_vec)));
-    console.log(theta);
-    //theta = u[1] < 0 ? theta : -theta; 
+    var theta = math.acos(math.dot(wall_norm, j_vec));
+    // console.log(theta);
     
-    // v*R_theta
-    //Rotate to
-    var vec_1 = rotate_vec(v, theta);
+    var ker = [[1, 0],[0, -1]];
     
-    var ker = [[-1, 0],[0, 1]];
-    // v*R_theta * R_reflection
-    if(math.sin(theta)*2 < math.SQRT2){
-        ker = [[1, 0],[0, -1]];
-    }
+    // REFLECTION MATRIX
+    var ref_mat = math.multiply(math.multiply(rotate_mat(theta), ker), rotate_mat(-theta)) 
 
-    var vec_1r = math.multiply(ker, vec_1);
-
-    // v*R_Theta*R_reflection*R_-theta
-    return rotate_vec(vec_1r, theta);
+    return math.multiply(ref_mat, v)
 }
 
-rotate_vec = function(v, theta){
-    //GOHERE
-    const r_theta = [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]];
-    return math.multiply(r_theta, v);
-}
 
 // OTHER STUFF
 
@@ -664,13 +657,8 @@ drawCord = function(){
 
 window.onload = function() {
   	envSetup();
-    addWall0('13, 100, 300, 0');
-	addWall0('300, 0, 500, 53');
-	addWall0('500, 53, 300, 200');
-	addWall0('300, 200, 300, 253');
-	addWall0('300, 253, 220, 300');
-	addWall0('220, 300, 300, 300');
-	addWall0('300, 300, 0, 400');
-	addWall0('0, 400, 13, 100');
+	addWall0('-200, 0, 120, -100');
+	addWall0('120, -100, 100, 50');
+	addWall0('100, 50, -200, 0');
     // drawCircle();
 }
