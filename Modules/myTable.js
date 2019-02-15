@@ -27,7 +27,7 @@ rotate_mat = function(theta){
     return r_theta = [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]]
 }
 
-reflect2 = function(v, n){
+reflect = function(v, n){
     // GOHERE
     var wall_norm = normalize(n);
     
@@ -215,7 +215,7 @@ vectorOut = function(ptc, w){
         const v = normalize(ptc[1]); // normalize v of particle
         const n = math.multiply( rot_90 , math.subtract(w.slice(0,2), w.slice(2,4)) ); // normalize n of wall
         //const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n)); // CHANGE HERE: KERNEL 
-        const v_out = reflect2(v, n);
+        const v_out = reflect(v, n);
         //console.log(v_out);
         return [ [[sol[0], sol[1]], v_out], sol[2] ];
 
@@ -420,16 +420,6 @@ vecFromPts = function(x, y){
     return math.subtract(y, x);
 }
 
-reflect = function(ptc, n){
-        
-    const v = normalize(ptc[1]); // normalize v of particle
-    const n_vec = normalize(n[1]); // normalize n of wall
-    
-    // FIXHERE
-    const v_out =  math.subtract(v, math.multiply(2 * math.dot(n_vec, v), n_vec));
-
-    return [n[0], v_out];
-}
 
 drawCircle = function(){
     envSetup();
@@ -463,12 +453,10 @@ drawCircle = function(){
         n = normalize(math.subtract(end, circle[0]));
         // FIX THIS PART3
         
-        //particle = reflect(particle, n);
-        
         v = normalize(particle[1]);
         v_out_true = math.dotMultiply([-1, -1], v);
 
-        v_out = reflect2(v, n);
+        v_out = reflect(v, n);
         
         /*
         v_out = v_out_true;
