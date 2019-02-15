@@ -31,13 +31,13 @@ reflect2 = function(v, w){
     // GOHERE
     var wall_vec = math.subtract(w.slice(2,4), w.slice(0,2)); // Calculating the wall vector
     var wall_norm = normalize([wall_vec[1], -wall_vec[0]]);
-    var j_vec = [0, 1]; //x in pos dir aka i
+    var j_vec = [0, 1]; //x in pos dir aka j | to align wall normal vector -> y-axis
     
     // GET THE ANGLE
-    var theta = math.acos(math.dot(wall_norm, j_vec));
+    var theta = math.acos(math.dot(wall_norm, j_vec)); // get the angle between normal vector and the y-axis
     // console.log(theta);
     
-    var ker = [[1, 0],[0, -1]];
+    var ker = [[1, 0],[0, -1]]; // kernel | specular 
     
     // REFLECTION MATRIX
     var ref_mat = math.multiply(math.multiply(rotate_mat(theta), ker), rotate_mat(-theta)) 
