@@ -30,28 +30,17 @@ rotate_mat = function(theta){
 reflect2 = function(v, n){
     // GOHERE
     var wall_norm = normalize(n);
+    var j_vec = [0, 1]; //x in pos dir aka j | to align wall normal vector -> y-axis
     
-    var j_vec = n[0]<0 ? [0, -1] : [0, 1]; //x in pos dir aka j | to align wall normal vector -> y-axis
-
     // GET THE ANGLE
-    const cos_theta = math.dot(wall_norm, j_vec);    
-
-    const theta = math.acos(cos_theta);  // get the angle between normal vector and the y-axis
-    const sin_theta = math.sin(theta);
-
-    const rot_theta = [[cos_theta, -1*sin_theta], [sin_theta, cos_theta]];
+    var theta = math.acos(math.dot(wall_norm, j_vec)); // get the angle between normal vector and the y-axis
     
-    const specular_ker = [[-1, 0],[0, 1]]; // kernel | specular 
+    var ker = [[1, 0],[0, -1]]; // kernel | specular 
     
-    var ker = specular_ker; // change kernel here
-    var ref_mat = math.multiply(
-                  math.multiply(math.transpose(rot_theta), ker), rot_theta);
-
-    
-    const invert_mat = [[-1, 0], [0, -1]];
-    var v_out = math.multiply(invert_mat, v);
     // REFLECTION MATRIX
-    return math.multiply(ref_mat, v_out)
+    var ref_mat = math.multiply(math.multiply(rotate_mat(theta), ker), rotate_mat(-theta)) 
+
+    return math.multiply(ref_mat, v)
 }
 
 
@@ -345,10 +334,10 @@ drawRect = function() {
 
     // DRAW RECTANGLE
     var walls =[
-                    [-w/2, -h/2, w/2, -h/2],
-                    [w/2, -h/2, w/2, h/2],
-                    [-w/2, h/2, w/2, h/2],
-                    [-w/2, -h/2, -w/2, h/2]
+                    [0, 0, w, 0],
+                    [w, 0, w, h],
+                    [w, h, 0, h],
+                    [0, h, 0, 0]
                  ]
     
     var draw_walls = walls.map(function(x) {return drawPath(x.slice(0,2), x.slice(2,4), 'red', false)});
@@ -460,24 +449,21 @@ drawCircle = function(){
         
         path = drawPath(start, end);
 
-        n = normalize(math.subtract(end, circle[0]));
+        n = normalize(math.subtract(circle[0], end));
+        drawVector([end, n], 100) 
         // FIX THIS PART3
         
         //particle = reflect(particle, n);
         
         v = normalize(particle[1]);
-        v_out_true = math.dotMultiply([-1, -1], v);
+        var v_out = math.dotMultiply([-1, -1], v);
 
-        v_out = reflect2(v, n);
+//        v_out = reflect2(v, n);
         
-        /*
-        v_out = v_out_true;
-
         console.log(v_out_true);
         console.log('hi');
         console.log(v_out);
         console.log('bye');
-        */ 
 
         particle = [end, v_out];
 
@@ -680,7 +666,6 @@ drawCord = function(){
     
     
     paper.view.translate(new Point(w/2, h/2));
-    paper.view.scale(1, -1);
 }
 
 window.onload = function() {
