@@ -23,54 +23,49 @@
     
     <div id="window">
         <!-- CANVAS FOR DRAWING -->
-        <canvas id="b_table" resize="true"></canvas>
+        <canvas id="b_table" resize="true" style="padding: 10px 10px"></canvas>
     </div>
 
     <!-- TABLE -->
+    <center>
     <div style="padding:5px">
             <input type="radio" id="rectangle" name="table_shape" value="rectangle">
             <label for="rectangle">Rectangle</label>
             <input type="radio" id="circle" name="table_shape" value="circle">
-            <label for="circle">circle</label>
-            <input type="radio" id="polygon" name="table_shape" value="polygon" checked > 
+            <label for="circle">circle</label> <input type="radio" id="polygon" name="table_shape" value="polygon" checked > 
             <label for="polygon">polygon</label>
     </div>
-
+        <button onclick="run()" id="run"> Run </button>
+        Number of Iterations: <input type="text" name="num_iter" value="100" id="num_iter">
+        <div class="dropdown">
+            <button onclick="myFunction()" class="dropbtn">Add Pts / Clear All</button>
+            <div id="myDropdown" class="dropdown-content">
+                <a href="#" id="addPoint" onclick="addWall()">Add Wall</a>
+                <a href="#" id="clear" onclick="clearAll()">Clear All</a>
+            </div>
+        </div> 
+        <button onclick="exportSVG()" id="export_svg">Export SVG</button>
+        <button onclick="exportStates()" id="export_states">Export States</button>
+    </center>
     <table>
+        <tr>
+            <td>Initial Position:</td>
+            <td><input type="text" name="position" value="30, 30" id="position"></td>
+        </tr>
+        <tr>
+            <td>Initial Heading:</td>
+            <td><input type="text" name="heading"  value="(0, 1)" id="heading"></td>
+            <td class="slidecontainer" colspan=2><input type="range" min="0" max="360" value="180" class="slider" id="theta" oninput="slideToVec(this.value)"></td>
+        </tr>
         <tr> 
-            <td> Width/Radius:</td>
+            <td> Width:</td>
             <td><input type="text" name="table_width"  value="200" id="table_width"></td>
 
             <td>Height:</td>
             <td><input type="text" name="table_height" value="300" id="table_height"></td>
         </tr>
-        <tr>
-            <td>Initial Position:</td>
-            <td><input type="text" name="position" value="150, 200" id="position"></td>
-            <td colspan=2>
-                <div class="dropdown">
-                      <button onclick="myFunction()" class="dropbtn">Add Pts / Clear All</button>
-                        <div id="myDropdown" class="dropdown-content">
-                            <a href="#" id="addPoint" onclick="addWall()">Add Wall</a>
-                            <a href="#" id="clear" onclick="clearAll()">Clear All</a>
-                        </div>
-                </div> 
-            </td>
-        </tr>
-        <tr>
-            <td>Initial Heading:</td>
-            <td><input type="text" name="heading"  value="100, 300" id="heading"></td>
-            <td class="slidecontainer" colspan=2><input type="range" min="0" max="360" value="0" class="slider" id="theta" oninput="slideToVec(this.value)"></td>
-        </tr>
-        <tr>
-            <td>Number of Iterations:</td>
-            <td><input type="text" name="num_iter" value="100" id="num_iter"></td>
-        </tr>
     </table>
 
-        <button onclick="run()" id="run"> Run </button>
-        <button onclick="exportSVG()" id="export_svg">Export SVG</button>
-        <button onclick="exportStates()" id="export_states">Export States</button>
 </body>
 
 </html>

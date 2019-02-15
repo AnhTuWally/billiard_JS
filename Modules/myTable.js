@@ -58,17 +58,17 @@ reflect2 = function(v, n){
 // OTHER STUFF
 
 slideToVec = function(theta){
-    theta = parseInt(theta);	
+    theta = 270 - parseInt(theta);	
 		
 	theta = Math.PI * theta / 180;
-    var x = math.round(math.cos(theta), 3);
-    var y = math.round(math.sin(theta), 3);
+    var x = math.cos(theta);
+    var y = math.sin(theta);
 
-    document.getElementById('heading').value = "(" + x + ", " + y + ")";
+    document.getElementById('heading').value = "(" + math.round(x, 3) + ", " + math.round(y,3) + ")";
 
 
     initial_position = parseCord(document.getElementById('position').value);
-    initial_heading  = normalize(parseCord(document.getElementById('heading').value));
+    initial_heading  = [x, y];
     
     initial_heading = math.multiply(initial_heading, 30);
 
@@ -496,7 +496,6 @@ exportSVG = function(){
 run = function(){
     var table_shape = document.querySelector('input[name="table_shape"]:checked').value;
     console.log(table_shape);
-
 
     if (table_shape === 'rectangle'){
         drawRect();

@@ -41,12 +41,19 @@ canvas[resize] {
   opacity: 1; /* Fully shown on mouse-over */
 }
 
- /* Dropdown Button */
+ /* Button Style */
+#run{
+	background-color: #32CD32;
+	color: white;
+    padding: 10px 20px;
+    font-size: 13px;
+    border: none;
+    cursor: pointer;
+}
 #addPoint{
 	background-color: #32CD32;
 	color: white;
 }
-
 #clear{
 	background-color: #FF0000;
 	color: white;
@@ -69,6 +76,7 @@ canvas[resize] {
 .dropdown {
   position: relative;
   display: inline-block;
+  margin:10px 0px;
 }
 
 /* Dropdown Content (Hidden by Default) */
