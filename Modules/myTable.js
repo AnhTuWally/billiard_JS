@@ -16,6 +16,8 @@ const window_size = [800, 400]; //
 
 var states = [];
 
+var st_lst = [];
+
 var initial_vec_path;
 
 var w, h, initial_position, initial_heading, particle, num_iter;
@@ -31,6 +33,14 @@ var  wall_ID, wall_lst_key;
 var ctx, scatterChart;
 
 // Vector/Matrix stuff
+var theta_out;
+
+getTheta = function(v1, v2){
+    var det = v1[0]*v2[1] - v2[0]*v1[1];
+    var dot = math.dot(v1, v2);
+    var theta = math.atan2(det, dot);
+    return theta 
+}
 
 rotate_mat = function(theta){
     return r_theta = [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]]
@@ -55,6 +65,10 @@ reflect = function(v, n){
     var ref_mat = math.multiply(
                   math.multiply(math.transpose(rot_theta), ker), rot_theta);
     
+    var v_out_0 = math.multiply(math.multiply(ker, rot_theta), v);
+
+    theta_out = math.acos(math.dot(j_vec, v_out_0)); //update theta
+
     var v_out = math.multiply(invert_mat, v);
     
     return math.multiply(ref_mat, v_out)
@@ -62,6 +76,9 @@ reflect = function(v, n){
 
 
 // OTHER STUFF
+getDist = function(p0, p1){
+    return math.norm(math.subtract(p0, p1))
+}
 
 slideToVec = function(theta){
     theta = 270 - parseInt(theta);	
@@ -353,16 +370,25 @@ drawRect = function() {
     var walls =[
                     [-w/2, -h/2, w/2, -h/2],
                     [w/2, -h/2, w/2, h/2],
-                    [-w/2, h/2, w/2, h/2],
-                    [-w/2, -h/2, -w/2, h/2]
+                    [w/2, h/2, -w/2, h/2],
+                    [-w/2, h/2, -w/2, -h/2]
                  ]
+
+    var s_total = 0
+
+    for(var i = 0; i < walls.length; i++){
+        w = walls[i];
+        s_total += getDist( w.slice(0, 2), w.slice(2, 4) );
+    }
     
+
     var draw_walls = walls.map(function(x) {return drawPath(x.slice(0,2), x.slice(2,4), 'red', false)});
     
     // Initialization
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
 	
 	states = [];  //reset states
+    st_lst = [];
 	// console.log(walls);
     // BEGIN LOOP
     for ( var  lp = 0; lp < num_iter; lp++ ){
@@ -373,6 +399,7 @@ drawRect = function() {
         // console.log(t_col);
         idx_wall = idxSmallest(t_col);
         w = walls[idx_wall[0]];
+
         v_out = vectorOut(particle, w);
 
         // DRAW
@@ -391,10 +418,79 @@ drawRect = function() {
         }
 
         particle = v_out[0];
+        var s_wall = 0
+
+        for(var i = 0; i < idx_wall; i++){
+            s_wall += getDist( walls[i].slice(0, 2), walls[i].slice(2, 4) );
+            
+        }
+
+
+        s_wall += getDist(w.slice(0, 2), v_out[0][0]);
+        
+        var p_wall = s_wall/s_total;
+        
+
+        //GOHERE
+
 		states.push(particle); //append new state
+        st_lst.push([p_wall, theta_out]);
     }
+    plotPod(st_lst);
 }
 
+
+plotPod = function(dat){
+    ctx = document.getElementById('chart_canvas').getContext('2d');
+
+	scatterChart = new Chart(ctx, {
+	    type: 'scatter',
+	    data: {
+	        datasets: [{
+	            label: 'Phase Potrait',
+                data: []
+	        }]
+	    },
+	    options: {
+	        scales: {
+	            xAxes: [{
+                    scaleLabel:{
+                        display:true,
+                        labelString: 's'
+                    },
+	                type: 'linear',
+	                position: 'bottom',
+					ticks:{
+						max:1,
+                        min:0,
+                        stepSize: 0.1
+					}
+	            }],
+	            yAxes: [{
+                    scaleLabel:{
+                        display:true,
+                        labelString: 'theta'
+                    },
+	                type: 'linear',
+	                position: 'bottom',
+					ticks:{
+						max:1.8,
+                        min:-1.8,
+                        stepSize: 0.5
+					}
+	            }]
+	        }
+	    }
+	});
+    
+    scatterChart.data.datasets[0].data = [];
+
+    for(var i=0; i<dat.length; i++){
+        var temp = dat[i];
+        scatterChart.data.datasets[0].data.push({x: temp[0], y: temp[1]});
+    }
+    scatterChart.update();
+}
 
 circleCollide = function(circle, line){
     
@@ -545,52 +641,13 @@ envSetup = function(){
 
     drawCord();
     
-    ctx = document.getElementById('chart_canvas').getContext('2d');
-	
-
-	scatterChart = new Chart(ctx, {
-	    type: 'scatter',
-	    data: {
-	        datasets: [{
-	            label: 'Phase Potrait',
-                data: []
-	        }]
-	    },
-	    options: {
-	        scales: {
-	            xAxes: [{
-                    scaleLabel:{
-                        display:true,
-                        labelString: 's'
-                    },
-	                type: 'linear',
-	                position: 'bottom',
-					ticks:{
-						max:1,
-                        min:0,
-                        stepSize: 0.1
-					}
-	            }],
-	            yAxes: [{
-                    scaleLabel:{
-                        display:true,
-                        labelString: 'theta'
-                    },
-	                type: 'linear',
-	                position: 'bottom',
-					ticks:{
-						max:1,
-                        min:-1,
-                        stepSize: 0.2
-					}
-	            }]
-	        }
-	    }
-	})
-    ;
-    // add data to chart  
-    scatterChart.data.datasets[0].data.push({x:0.6, y:0.6});
+    try{
+        scatterChart.destroy();
+    }catch(error){
+        
+    }
 }
+
 
 clearAll = function(){
     paper.clear();
@@ -665,6 +722,7 @@ removeWall = function(wall_id){
 }
 
 drawPoly = function(){
+
 	envSetup();
 
     // paper.view.translate(new Point(20, 20));
