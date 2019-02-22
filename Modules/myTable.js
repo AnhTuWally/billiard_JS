@@ -1,8 +1,14 @@
+// particle [[x_0, v_0], [v_x, v_y]]
+// wall [[x_0, y_0], [x_1, y_1]]
 // Make the paper scope global, by injecting it into window:
 paper.install(window);
 
 const rot_90 = [ [0, -1],
                  [1,0  ]];
+
+const specular_ker = [[-1, 0],[0, 1]]; // kernel | specular 
+
+const invert_mat = [[-1, 0], [0, -1]];
 
 const tol = 10e-6;
 
@@ -21,6 +27,9 @@ var wall_lst = [];
 var wall_count = 0
 var  wall_ID, wall_lst_key;
 
+// CHART stuff
+var ctx, scatterChart;
+
 // Vector/Matrix stuff
 
 rotate_mat = function(theta){
@@ -31,26 +40,23 @@ reflect = function(v, n){
     // GOHERE
     var wall_norm = normalize(n);
     
+    // rotation fix 
     var j_vec = n[0]<0 ? [0, -1] : [0, 1]; //x in pos dir aka j | to align wall normal vector -> y-axis
 
     // GET THE ANGLE
     const cos_theta = math.dot(wall_norm, j_vec);    
-
     const theta = math.acos(cos_theta);  // get the angle between normal vector and the y-axis
     const sin_theta = math.sin(theta);
-
-    const rot_theta = [[cos_theta, -1*sin_theta], [sin_theta, cos_theta]];
     
-    const specular_ker = [[-1, 0],[0, 1]]; // kernel | specular 
+    // Rotation Matrix
+    const rot_theta = [[cos_theta, -1*sin_theta], [sin_theta, cos_theta]];
     
     var ker = specular_ker; // change kernel here
     var ref_mat = math.multiply(
                   math.multiply(math.transpose(rot_theta), ker), rot_theta);
-
     
-    const invert_mat = [[-1, 0], [0, -1]];
     var v_out = math.multiply(invert_mat, v);
-    // REFLECTION MATRIX
+    
     return math.multiply(ref_mat, v_out)
 }
 
@@ -514,7 +520,7 @@ shiftPt = function(pt, delta){
 }
 
 envSetup = function(){
-
+	//ENVSETUP
     paper.clear();
 
     paper.setup('b_table');
@@ -537,8 +543,53 @@ envSetup = function(){
 
     num_iter  = parseInt(document.getElementById('num_iter').value);
 
-    drawCord()
+    drawCord();
+    
+    ctx = document.getElementById('chart_canvas').getContext('2d');
+	
 
+	scatterChart = new Chart(ctx, {
+	    type: 'scatter',
+	    data: {
+	        datasets: [{
+	            label: 'Phase Potrait',
+                data: []
+	        }]
+	    },
+	    options: {
+	        scales: {
+	            xAxes: [{
+                    scaleLabel:{
+                        display:true,
+                        labelString: 's'
+                    },
+	                type: 'linear',
+	                position: 'bottom',
+					ticks:{
+						max:1,
+                        min:0,
+                        stepSize: 0.1
+					}
+	            }],
+	            yAxes: [{
+                    scaleLabel:{
+                        display:true,
+                        labelString: 'theta'
+                    },
+	                type: 'linear',
+	                position: 'bottom',
+					ticks:{
+						max:1,
+                        min:-1,
+                        stepSize: 0.2
+					}
+	            }]
+	        }
+	    }
+	})
+    ;
+    // add data to chart  
+    scatterChart.data.datasets[0].data.push({x:0.6, y:0.6});
 }
 
 clearAll = function(){

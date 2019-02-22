@@ -12,6 +12,7 @@
     <!-- Load the Math.js library -->
     <script type="text/javascript" src="./Modules/math.js"></script>
     <script type="text/javascript" src="./Modules/FileSaver.js"></script>
+    <script type="text/javascript" src="./Modules/Chart.bundle.js"></script>
     <!-- Define inlined PaperScript associate it with b_table -->
     <script type="text/javascript" src="./Modules/myTable.js" canvas = "b_table"></script>
     
@@ -23,9 +24,8 @@
     
     <div id="window">
         <!-- CANVAS FOR DRAWING -->
-        <canvas id="b_table" resize="true" style="padding: 10px 10px"></canvas>
+        <canvas id="b_table" resize="true"></canvas>
     </div>
-
     <!-- TABLE -->
     <center>
     <div style="padding:5px">
@@ -36,7 +36,7 @@
             <label for="polygon">polygon</label>
     </div>
         <button onclick="run()" id="run"> Run </button>
-        Number of Iterations: <input type="text" name="num_iter" value="100" id="num_iter">
+        Number of Iterations: <input type="text" name="num_iter" value="100" id="num_iter" style='width:20px;'>
         <div class="dropdown">
             <button onclick="myFunction()" class="dropbtn">Add Pts / Clear All</button>
             <div id="myDropdown" class="dropdown-content">
@@ -65,7 +65,12 @@
             <td><input type="text" name="table_height" value="300" id="table_height"></td>
         </tr>
     </table>
+    
 
+    <!--CHART AREA -->
+    <div id='chart'>
+        <canvas id="chart_canvas" resize="true"></canvas>
+    </div>
 </body>
 
 </html>

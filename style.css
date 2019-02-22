@@ -11,9 +11,23 @@ canvas[resize] {
     height: 100%;
 }
 
+#b_table{
+	width: 800px;
+	height: 400px;
+}
+
+#chart{
+    width:800px;
+    margin:auto;
+}
+
+#chart_canvas{
+	border: 5px solid #D3D3D3;
+}
+
 #window{
 	background: white;
-	border: 20px solid #D3D3D3;
+	border: 10px solid #D3D3D3;
 	width: 800px;
 	height: 400px;
 	margin: auto;
