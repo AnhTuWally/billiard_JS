@@ -66,8 +66,10 @@ reflect = function(wv, n){
     // GET THE ANGLE
     const cos_theta = math.dot(wall_norm, j_vec);    
     const theta = math.acos(cos_theta);  // get the angle between normal vector and the y-axis
-    const sin_theta = math.sin(theta);
+    const sin_theta = n[0]<0 ? -math.sin(theta) : math.sin(theta);
     
+    console.log(theta);
+
     // Rotation Matrix
     const rot_theta = [[1, 0, 0], [0, cos_theta, -1*sin_theta], [0, sin_theta, cos_theta]];
     
