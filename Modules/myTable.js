@@ -6,9 +6,9 @@ paper.install(window);
 const rot_90 = [ [0, -1],
                  [1,0  ]];
 
-const specular_ker = [[-1, 0],[0, 1]]; // kernel | specular 
+const specular_ker = [[1, 0, 0], [0, -1, 0], [0, 0, 1]]; // kernel | specular 
 
-const invert_mat = [[-1, 0], [0, -1]];
+const invert_mat = [[1, 0, 0], [0, -1, 0], [0, 0, -1]];
 
 const tol = 10e-6;
 
@@ -20,7 +20,7 @@ var st_lst = [];
 
 var initial_vec_path;
 
-var w, h, initial_position, initial_heading, particle, num_iter;
+var w, h, initial_position, initial_omega, initial_heading, initial_wv, particle, num_iter;
 
 var del_x, del_y;
 // HTML STUFF
@@ -46,12 +46,22 @@ rotate_mat = function(theta){
     return r_theta = [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]]
 }
 
-reflect = function(v, n){
+no_slip_ker = function(gamma){
+    const denom = 1 + gamma**2;
+    const a = (1-gamma**2)/denom;
+    const b = 2*gamma/denom
+    return [ [-a, -b, 0], [-b, a, 0], [0, 0, -1] ];
+}
+
+reflect = function(wv, n){
     // GOHERE
     var wall_norm = normalize(n);
-    
+    var omega = wv[0];
+    var v = wv.slice(2, 3);
+
     // rotation fix 
     var j_vec = n[0]<0 ? [0, -1] : [0, 1]; //x in pos dir aka j | to align wall normal vector -> y-axis
+    var i_vec = n[0]<0 ? [-1, 0] : [-1, 0]; //x in pos dir aka j | to align wall normal vector -> y-axis
 
     // GET THE ANGLE
     const cos_theta = math.dot(wall_norm, j_vec);    
@@ -59,19 +69,20 @@ reflect = function(v, n){
     const sin_theta = math.sin(theta);
     
     // Rotation Matrix
-    const rot_theta = [[cos_theta, -1*sin_theta], [sin_theta, cos_theta]];
+    const rot_theta = [[1, 0, 0], [0, cos_theta, -1*sin_theta], [0, sin_theta, cos_theta]];
     
-    var ker = specular_ker; // change kernel here
+    var ker = no_slip_ker(1/math.sqrt(2)); // change kernel here
+    
     var ref_mat = math.multiply(
                   math.multiply(math.transpose(rot_theta), ker), rot_theta);
     
-    var v_out_0 = math.multiply(math.multiply(ker, rot_theta), v);
+    var v_out_0 = math.multiply(math.multiply(ker, rot_theta), wv).slice(1, 3);
 
-    cos_theta_out = math.dot([0, 1], v_out_0); //update theta
+    cos_theta_out = math.dot(i_vec, v_out_0); //update theta
 
-    var v_out = math.multiply(invert_mat, v);
+    //var v_out = wv;//math.multiply(invert_mat, wv);
     
-    return math.multiply(ref_mat, v_out)
+    return math.multiply(ref_mat, wv)
 }
 
 
@@ -164,8 +175,7 @@ collide = function(p, w){
      */
     // console.log(w);
     var x_p = p[0];
-    var v_p = p[1];
-	
+    var v_p = p[1].slice(1, 3);
     var w_Ab = stToEq(w);
     var mat_A = [ 
                     [1,     0,      -v_p[0]],
@@ -180,6 +190,8 @@ collide = function(p, w){
     
     var res = math.transpose(math.lusolve(mat_A, vec_b))[0];
     
+    //console.log(res);
+
     if(res[2] < 0){
         res = [0,0, -1];
     } else {
@@ -196,7 +208,6 @@ collide = function(p, w){
             res = [0, 0, -1];
         }
     }
-
     return res;
 }
 
@@ -214,7 +225,7 @@ vectorOut = function(ptc, w){
      * - Calculating the collision point, reflected vector, and collution time 
      * INPUT:
      * ptc 
-     * -[ [x_0, y_0], [v_x0, v_y0] ]
+     * -[ [x_0, y_0], [omega,  v_x0, v_y0] ]
      * -the vector of the particle
      * w
      * -[ [x_w0, y_w0], [wx, wy] ];
@@ -228,19 +239,18 @@ vectorOut = function(ptc, w){
         // Solving for colliding point
         var sol = collide(ptc, w);
         
-
         // CASE 1: t < 0
         if (sol[2] < 0) {
-            return [ [[sol[0], sol[1]], [Number.NaN, Number.NaN]], sol[2] ];
+            return [ [[sol[0], sol[1]], [Number.NaN, Number.NaN, Number.NaN]], sol[2] ];
+        } else { 
+            // CASE 2: t >=0
+            const v = normalize(ptc[1]); // normalize v of particle
+            const n = math.multiply( rot_90 , math.subtract(w.slice(0,2), w.slice(2,4)) ); // normalize n of wall
+            //const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n)); // CHANGE HERE: KERNEL 
+            const v_out = reflect(v, n);
+            //console.log(v_out);
+            return [ [[sol[0], sol[1]], v_out], sol[2] ];
         }
-        
-        // CASE 2: t >=0
-        const v = normalize(ptc[1]); // normalize v of particle
-        const n = math.multiply( rot_90 , math.subtract(w.slice(0,2), w.slice(2,4)) ); // normalize n of wall
-        //const v_out =  math.subtract(v, math.multiply(2 * math.dot(n,v), n)); // CHANGE HERE: KERNEL 
-        const v_out = reflect(v, n);
-        //console.log(v_out);
-        return [ [[sol[0], sol[1]], v_out], sol[2] ];
 
     } catch( err ) {
         // CASE 3: No Solution
@@ -264,12 +274,12 @@ nextPt2 = function(xv, t){
      * Calculating the next point at time t
      */
     const x = xv[0];
-    const v = xv[1];
+    const v = xv[1].slice(1, 3);
 
     x[0] = x[0] + t*v[0];
     x[1] = x[1] + t*v[1];
 
-    return [ [x[0], x[1]], v ];
+    return [ [x[0], x[1]], xv[1] ];
 }
 
 drawVector = function(xv, c=1, sc = 'black', draw_root = false){
@@ -277,8 +287,8 @@ drawVector = function(xv, c=1, sc = 'black', draw_root = false){
      * Draw the path given the current pos and vector
      */
     const x = xv[0];
-    const v = xv[1];
-    
+    const v = xv[1].slice(1, 3);
+    //console.log(v); 
     if (draw_root){
         var rt = new Path.Circle(new Point(x[0], x[1]), 3);
         rt.strokeColor = 'green'; // root
@@ -395,11 +405,10 @@ drawRect = function() {
 
         v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
         t_col = v_out_lst.map(function(x) {return x[1]});
-
         // console.log(t_col);
         idx_wall = idxSmallest(t_col);
         w = walls[idx_wall[0]];
-
+        
         v_out = vectorOut(particle, w);
 
         // DRAW
@@ -534,7 +543,6 @@ drawCircle = function(){
     var cle = new Path.Circle([0, 0], r);
      
     cle.strokeColor = 'black';
-    
 
     var path, t_res, n, start, end, v_out ;
     
@@ -630,14 +638,18 @@ envSetup = function(){
 
     //var min_max = window_size.sort();
 
-    initial_heading  = normalize(parseCord(document.getElementById('heading').value));
-    particle = [ initial_position, initial_heading ];
+    initial_omega  = parseInt(document.getElementById('omega').value);
+    initial_heading  = parseCord(document.getElementById('heading').value);
+    
+    initial_wv = normalize([initial_omega, initial_heading[0], initial_heading[1]]);
+
+    particle = [ initial_position, initial_wv];
 
     initial_vec_path = drawVector(particle, 30, '#d3d3d3', true);
 
 	slideToVec(theta);	
 
-    num_iter  = parseInt(document.getElementById('num_iter').value);
+    num_iter = parseInt(document.getElementById('num_iter').value);
 
     drawCord();
     
