@@ -33,7 +33,7 @@ var  wall_ID, wall_lst_key;
 var ctx, scatterChart;
 
 // Vector/Matrix stuff
-var theta_out;
+var cos_theta_out;
 
 getTheta = function(v1, v2){
     var det = v1[0]*v2[1] - v2[0]*v1[1];
@@ -67,7 +67,7 @@ reflect = function(v, n){
     
     var v_out_0 = math.multiply(math.multiply(ker, rot_theta), v);
 
-    theta_out = math.acos(math.dot(j_vec, v_out_0)); //update theta
+    cos_theta_out = math.dot([0, 1], v_out_0); //update theta
 
     var v_out = math.multiply(invert_mat, v);
     
@@ -434,7 +434,7 @@ drawRect = function() {
         //GOHERE
 
 		states.push(particle); //append new state
-        st_lst.push([p_wall, theta_out]);
+        st_lst.push([p_wall, cos_theta_out]);
     }
     plotPod(st_lst);
 }
