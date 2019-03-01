@@ -33,7 +33,7 @@ var  wall_ID, wall_lst_key;
 var ctx, scatterChart;
 
 // Vector/Matrix stuff
-var cos_theta_out;
+var cos_theta_out, ker;
 
 getTheta = function(v1, v2){
     var det = v1[0]*v2[1] - v2[0]*v1[1];
@@ -42,9 +42,6 @@ getTheta = function(v1, v2){
     return theta 
 }
 
-rotate_mat = function(theta){
-    return r_theta = [[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]]
-}
 
 no_slip_ker = function(gamma){
     const denom = 1 + gamma**2;
@@ -66,14 +63,15 @@ reflect = function(wv, n){
     // GET THE ANGLE
     const cos_theta = math.dot(wall_norm, j_vec);    
     const theta = math.acos(cos_theta);  // get the angle between normal vector and the y-axis
-    const sin_theta = n[0]<0 ? -math.sin(theta) : math.sin(theta);
-    
-    console.log(theta);
+    //const theta = n[0] > 0 ? -math.acos(cos_theta) : math.acos(cos_theta);      
+    //const sin_theta = n[0]<0 ? -math.sin(theta) : math.sin(theta);
+    const sin_theta = math.sin(theta);
+    //cos_theta = math.cos(theta);
+    //console.log(theta);
 
     // Rotation Matrix
     const rot_theta = [[1, 0, 0], [0, cos_theta, -1*sin_theta], [0, sin_theta, cos_theta]];
     
-    var ker = no_slip_ker(1/math.sqrt(2)); // change kernel here
     
     var ref_mat = math.multiply(
                   math.multiply(math.transpose(rot_theta), ker), rot_theta);
@@ -416,7 +414,7 @@ drawRect = function() {
         // DRAW
         start = new Point(particle[0]);
         end = new Point(v_out[0][0])
-
+        
         path = drawPath(start, end);
         
         v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
@@ -512,7 +510,7 @@ circleCollide = function(circle, line){
     var r = circle[1];
 
     var x = line[0];
-    var v = line[1];
+    var v = line[1].slice(1,3);
 
     var a = v[0]**2 + v[1]**2;
     var b = 2*( v[0]*(x[0] - center[0]) + v[1]*(x[1] - center[1]) );
@@ -566,7 +564,7 @@ drawCircle = function(){
         // FIX THIS PART3
         
         v = normalize(particle[1]);
-        v_out_true = math.dotMultiply([-1, -1], v);
+        //v_out_true = math.dotMultiply([-1, -1], v);
 
         v_out = reflect(v, n);
         
@@ -639,6 +637,8 @@ envSetup = function(){
     initial_position = parseCord(document.getElementById('position').value);
 
     //var min_max = window_size.sort();
+    var gamma = parseFloat(document.getElementById('gamma').value);
+    ker = no_slip_ker(gamma); // change kernel here
 
     initial_omega  = parseInt(document.getElementById('omega').value);
     initial_heading  = parseCord(document.getElementById('heading').value);
