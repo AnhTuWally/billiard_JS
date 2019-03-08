@@ -57,16 +57,24 @@ reflect = function(wv, n){
     var v = wv.slice(2, 3);
 
     // rotation fix 
+    
+    /*  
     var j_vec = n[0]<0 ? [0, -1] : [0, 1]; //x in pos dir aka j | to align wall normal vector -> y-axis
     var i_vec = n[0]<0 ? [-1, 0] : [-1, 0]; //x in pos dir aka j | to align wall normal vector -> y-axis
+    */
 
+    const j_vec = [0, 1];
+    const i_vec = [1, 0];
     // GET THE ANGLE
-    const cos_theta = math.dot(wall_norm, j_vec);    
-    const theta = math.acos(cos_theta);  // get the angle between normal vector and the y-axis
-    //const theta = n[0] > 0 ? -math.acos(cos_theta) : math.acos(cos_theta);      
+    var cos_theta = math.dot(wall_norm, j_vec);    
+    
+    //const theta = math.acos(cos_theta);  // get the angle between normal vector and the y-axis
+
+    var theta = n[0] < 0 ? -math.acos(cos_theta) : math.acos(cos_theta);      
     //const sin_theta = n[0]<0 ? -math.sin(theta) : math.sin(theta);
-    const sin_theta = math.sin(theta);
-    //cos_theta = math.cos(theta);
+
+    var sin_theta = math.sin(theta);
+    cos_theta = math.cos(theta);
     //console.log(theta);
 
     // Rotation Matrix
