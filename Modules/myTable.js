@@ -798,5 +798,5 @@ window.onload = function() {
 	addWall0('-200, 0, 120, -100');
 	addWall0('120, -100, 100, 50');
 	addWall0('100, 50, -200, 0');
-    // drawCircle();
+    drawRect();
 }
