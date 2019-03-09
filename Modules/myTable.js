@@ -290,6 +290,22 @@ nextPt2 = function(xv, t){
     return [ [x[0], x[1]], xv[1] ];
 }
 
+particle2Wall = function(xv, t=1){
+    /*
+     * Calculating the next point at time t
+     */
+    const x = xv[0].slice();
+    const v = xv[1].slice(1, 3);
+    
+    //console.log(x);
+
+    // add the ending pt;
+    x.push(x[0] + t*v[0]);
+    x.push(x[1] + t*v[1]);
+
+    return x;
+}
+
 drawVector = function(xv, c=1, sc = 'black', draw_root = false){
     /*
      * Draw the path given the current pos and vector
@@ -376,6 +392,102 @@ parseCord = function(cord){
     return cord.map(parseFloat)
 }
 
+drawRect_tron = function() {
+    envSetup();
+
+    var red_p = particle.slice();
+    var blue_p = [[50, 50], [0.3, 0.5, 1]];
+
+    w = parseInt(document.getElementById('table_width').value);
+
+    // DRAW RECTANGLE
+    var walls =[
+                    [-w/2, -h/2, w/2, -h/2],
+                    [w/2, -h/2, w/2, h/2],
+                    [w/2, h/2, -w/2, h/2],
+                    [-w/2, h/2, -w/2, -h/2]
+                 ]
+
+    var s_total = 0
+
+    for(var i = 0; i < walls.length; i++){
+        w = walls[i];
+        s_total += getDist( w.slice(0, 2), w.slice(2, 4) );
+    }
+
+    var draw_walls = walls.map(function(x) {return drawPath(x.slice(0,2), x.slice(2,4), 'red', false)});
+    
+    // Initialization
+    var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
+	
+    var path_col = "grey";
+
+	states = [];  //reset states
+    st_lst = [];
+	// console.log(walls);
+    // BEGIN LOOP
+    
+    var walls_plus, red_wall, blue_wall;
+
+    for ( var  lp = 0; lp < num_iter; lp++ ){
+        
+        walls_plus = walls.slice();
+        
+        red_wall = particle2Wall(red_p, 100); 
+        console.log(red_wall);
+        drawPath(red_wall.slice(0, 2), red_wall.slice(2, 4), 'red', false);    
+
+        blue_wall = particle2Wall(blue_p, 100); 
+        drawPath(blue_wall.slice(0, 2), blue_wall.slice(2, 4), 'grey', false);    
+
+        //console.log(red_wall);
+
+        v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
+        t_col = v_out_lst.map(function(x) {return x[1]});
+        // console.log(t_col);
+        idx_wall = idxSmallest(t_col);
+        w = walls[idx_wall[0]];
+        
+        v_out = vectorOut(particle, w);
+
+        // DRAW
+        start = new Point(particle[0]);
+        end = new Point(v_out[0][0])
+        
+        //path_col = path_col == "red" ? "blue" : "red";
+
+        path = drawPath(start, end, sc=path_col);
+        
+        v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
+
+        // NEW POS
+        if ( idx_wall.length > 1 ) {
+            // Bounce to the corner
+            // v_out[0] = nextPt2( particle, v_out[1] - 3*tol); 
+            v_out[0][1] = math.multiply(-1, particle[1]);
+        }
+
+        particle = v_out[0];
+        var s_wall = 0
+
+        for(var i = 0; i < idx_wall; i++){
+            s_wall += getDist( walls[i].slice(0, 2), walls[i].slice(2, 4) );
+            
+        }
+
+
+        s_wall += getDist(w.slice(0, 2), v_out[0][0]);
+        
+        var p_wall = s_wall/s_total;
+        
+
+        //GOHERE
+
+		states.push(particle); //append new state
+        st_lst.push([p_wall, cos_theta_out]);
+    }
+    plotPod(st_lst);
+}
 
 drawRect = function() {
     envSetup();
@@ -405,6 +517,8 @@ drawRect = function() {
     // Initialization
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
 	
+    var path_col = "red";
+
 	states = [];  //reset states
     st_lst = [];
 	// console.log(walls);
@@ -423,7 +537,9 @@ drawRect = function() {
         start = new Point(particle[0]);
         end = new Point(v_out[0][0])
         
-        path = drawPath(start, end);
+        path_col = path_col == "red" ? "blue" : "red";
+
+        path = drawPath(start, end, sc=path_col);
         
         v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
 
@@ -554,6 +670,7 @@ drawCircle = function(){
 
     var path, t_res, n, start, end, v_out ;
     
+    var path_col = "red";
     // -----------------
 	
 	states = [];  //reset states
@@ -566,7 +683,9 @@ drawCircle = function(){
         start = new Point(particle[0]);
         end = nextPt2( particle, t_res[0] - tol)[0]; 
         
-        path = drawPath(start, end);
+        path_col = path_col == "red" ? "blue" : "red";
+
+        path = drawPath(start, end, sc=path_col);
 
         n = normalize(math.subtract(end, circle[0]));
         // FIX THIS PART3
@@ -609,6 +728,8 @@ run = function(){
         drawCircle();
     }else if (table_shape === 'polygon'){
 		drawPoly();
+    }else if (table_shape === 'tron'){
+		drawRect_tron();
 	}
 
 }
@@ -806,5 +927,5 @@ window.onload = function() {
 	addWall0('-200, 0, 120, -100');
 	addWall0('120, -100, 100, 50');
 	addWall0('100, 50, -200, 0');
-    drawRect();
+    drawRect_tron();
 }
