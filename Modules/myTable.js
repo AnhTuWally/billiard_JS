@@ -557,7 +557,7 @@ drawRect_tron = function() {
             }
 
             /* HANDEL blue COLLISION */ 
-            // RED collision happen, use walls plus red 
+            // blue collision happen, use walls plus red 
             w = walls_plus_red[idx_wall_blue[0]];
             
             v_out_blue = vectorOut(blue_p, w);
@@ -584,13 +584,29 @@ drawRect_tron = function() {
 
             /* HANDEL red PARTICLE */
 
-           start = new Point(red_p[0]);
-           red_p[0] = nextPt2(red_p, collision_time)[0];
-           end = new Point(red_p[0]);
-            
-           path_col = 'red'
+            start = new Point(red_p[0]);
+            red_p[0] = nextPt2(red_p, collision_time)[0];
+            end = new Point(red_p[0]);
+             
+            path_col = 'red'
 
-           path = drawPath(start, end, sc=path_col);
+            path = drawPath(start, end, sc=path_col);
+            
+            //phase potrait
+            var s_wall = 0
+            
+            if(idx_wall_blue < 4){
+                for(var i = 0; i < idx_wall_blue; i++){
+                    s_wall += getDist(walls[i].slice(0, 2), walls[i].slice(2, 4) );
+                }
+                
+
+                s_wall += getDist(w.slice(0, 2), v_out_blue[0][0]);
+                
+                var p_wall = s_wall/s_total;
+
+                st_lst.push([p_wall, cos_theta_out]);
+            }
     }
         // ------
         
