@@ -219,6 +219,43 @@ collide = function(p, w){
     return res;
 }
 
+get_intersection = function(p, w){
+    /*
+     * p : particle
+     * w : wall
+     */
+    // console.log(w);
+    var x_p = p[0];
+    var v_p = p[1].slice(1, 3);
+    var w_Ab = stToEq(w);
+    var mat_A = [ 
+                    [1,     0,      -v_p[0]],
+                    [0,     1,      -v_p[1]],
+                    w_Ab[0],
+                  ];
+
+    var vec_b = [x_p[0], x_p[1], w_Ab[1]];
+    
+    // console.log(mat_A);
+    // console.log(vec_b);
+    
+    var res = math.transpose(math.lusolve(mat_A, vec_b))[0];
+
+    var a_pt = w.slice(0, 2);
+    var b_pt = w.slice(2, 4);
+    
+    var c_pt = res.slice(0,2);
+
+    var ab = math.distance(a_pt, b_pt);
+    var ac = math.distance(a_pt, c_pt);
+    var bc = math.distance(b_pt, c_pt);
+    
+    if (math.abs(ac + bc - ab) > tol){
+        res = [0, 0, -1];
+    }
+    
+    return res;
+}
 normalize = function(v){
     /*
     input: vector
@@ -290,20 +327,22 @@ nextPt2 = function(xv, t){
     return [ [x[0], x[1]], xv[1] ];
 }
 
-particle2Wall = function(xv, t=1){
+particle2Wall = function(p, wall){
     /*
      * Calculating the next point at time t
      */
-    const x = xv[0].slice();
-    const v = xv[1].slice(1, 3);
+    var sol;
+    var ext_wall = p[0];
     
-    //console.log(x);
-
-    // add the ending pt;
-    x.push(x[0] + t*v[0]);
-    x.push(x[1] + t*v[1]);
-
-    return x;
+    sol = collide(p, wall);
+    if( sol[2] > 0){
+        ext_wall = ext_wall.concat(sol.slice(0, 2));   
+        //console.log(ext_wall);
+        //drawPath(ext_wall.slice(0, 2), ext_wall.slice(2,  4), 'blue', false);
+        return ext_wall;
+    } else{
+        return null
+    }
 }
 
 drawVector = function(xv, c=1, sc = 'black', draw_root = false){
@@ -327,13 +366,16 @@ drawVector = function(xv, c=1, sc = 'black', draw_root = false){
     return path
 }
 
-drawPath = function(start, end, sc = 'blue', draw_root = true){
+drawPath = function(start, end, sc = 'blue', draw_root = true, tail_col){
     /*
      * Draw the path given the current pos and vector
      */
     if (draw_root){
         var rt = new Path.Circle(new Point(start), 3);
-        rt.strokeColor = 'green'; // root
+        rt.strokeColor = sc; // root
+
+        var tail = new Path.Circle(new Point(end), 3);
+        tail.fillColor = tail_col;
     }
 	var path =  new Path.Line({
 		from: start,
@@ -394,9 +436,11 @@ parseCord = function(cord){
 
 drawRect_tron = function() {
     envSetup();
-
+    
+    //  Initialization
     var red_p = particle.slice();
-    var blue_p = [[50, 50], [0.3, 0.5, 1]];
+
+    var blue_p = [[60, 65], [0, 0.5, 0.7]];
 
     w = parseInt(document.getElementById('table_width').value);
 
@@ -415,7 +459,7 @@ drawRect_tron = function() {
         s_total += getDist( w.slice(0, 2), w.slice(2, 4) );
     }
 
-    var draw_walls = walls.map(function(x) {return drawPath(x.slice(0,2), x.slice(2,4), 'red', false)});
+    var draw_walls = walls.map(function(x) {return drawPath(x.slice(0,2), x.slice(2,4), 'grey', false)});
     
     // Initialization
     var v_out_lst, t_col, idx_wall, w, v_in, v_out, bounce, path, start, end;
@@ -427,65 +471,172 @@ drawRect_tron = function() {
 	// console.log(walls);
     // BEGIN LOOP
     
-    var walls_plus, red_wall, blue_wall;
-
+    var walls_plus_red, walls_plus_blue, red_wall, blue_wall, ext_wall_lst;
+    //GOHERE!
     for ( var  lp = 0; lp < num_iter; lp++ ){
         
-        walls_plus = walls.slice();
-        
-        red_wall = particle2Wall(red_p, 100); 
-        console.log(red_wall);
-        drawPath(red_wall.slice(0, 2), red_wall.slice(2, 4), 'red', false);    
+        walls_plus_red = walls.slice();
+        walls_plus_blue = walls.slice();
 
-        blue_wall = particle2Wall(blue_p, 100); 
-        drawPath(blue_wall.slice(0, 2), blue_wall.slice(2, 4), 'blue', false);    
+        for(var i = 0; i < walls.length; i++){
+            //console.log(walls[i]);
+            var red_wall = particle2Wall(red_p,  walls[i]);
+            var blue_wall = particle2Wall(blue_p,  walls[i]);
 
-        //console.log(red_wall);
-        walls_plus.push(red_wall);
-        walls_plus.push(blue_wall);
-        v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
-        t_col = v_out_lst.map(function(x) {return x[1]});
-        // console.log(t_col);
-        idx_wall = idxSmallest(t_col);
-        w = walls[idx_wall[0]];
-        
-        v_out = vectorOut(particle, w);
-
-        // DRAW
-        start = new Point(particle[0]);
-        end = new Point(v_out[0][0])
-        
-        //path_col = path_col == "red" ? "blue" : "red";
-
-        path = drawPath(start, end, sc=path_col);
-        
-        v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
-
-        // NEW POS
-        if ( idx_wall.length > 1 ) {
-            // Bounce to the corner
-            // v_out[0] = nextPt2( particle, v_out[1] - 3*tol); 
-            v_out[0][1] = math.multiply(-1, particle[1]);
-        }
-
-        particle = v_out[0];
-        var s_wall = 0
-
-        for(var i = 0; i < idx_wall; i++){
-            s_wall += getDist( walls[i].slice(0, 2), walls[i].slice(2, 4) );
+            if(red_wall!=null){
+                walls_plus_red.push(red_wall);
+            }
             
-        }
-
-
-        s_wall += getDist(w.slice(0, 2), v_out[0][0]);
+            if(blue_wall!=null){
+                walls_plus_blue.push(blue_wall);
+            }
+        } 
         
-        var p_wall = s_wall/s_total;
+        // handle red collisions with walls plus blue
+        v_out_lst_red = walls_plus_blue.map(function(wall) {return vectorOut(red_p, wall)});
+        t_col_red = v_out_lst_red.map(function(x) {return x[1]});
+        idx_wall_red = idxSmallest(t_col_red);
+        t_red = t_col_red[idx_wall_red];
+
+        // handle blue collision with walls plus red
+        v_out_lst_blue = walls_plus_red.map(function(wall) {return vectorOut(blue_p, wall)});
+        t_col_blue = v_out_lst_blue.map(function(x) {return x[1]});
+        idx_wall_blue = idxSmallest(t_col_blue);
+        t_blue = t_col_blue[idx_wall_blue];
         
+        console.log('time ', t_red, ' - ', t_blue);
+        if(t_red < t_blue){
 
-        //GOHERE
+            if(blue_wall!=null){
+                drawPath(blue_wall.slice(0, 2), blue_wall.slice(2, 4), 'blue', false);    
 
-		states.push(particle); //append new state
-        st_lst.push([p_wall, cos_theta_out]);
+            }
+            /* HANDEL RED COLLISION */ 
+            // RED collision happen, use walls plus blue
+            w = walls_plus_blue[idx_wall_red[0]];
+            
+            console.log(idx_wall_red);
+
+            v_out_red = vectorOut(red_p, w);
+            collision_time = v_out_red[1];
+            //
+            // DRAW
+            start = new Point(red_p[0]);
+            end = new Point(v_out_red[0][0]);
+            
+            path_col = 'red'
+
+            path = drawPath(start, end, path_col, true, 'red');
+            
+            v_out_red[0][0] = nextPt2( red_p, v_out_red[1] - tol)[0]; // BACK UP just a tad bit 
+            
+            console.log(v_out_red);
+            // NEW POS
+            if ( idx_wall_red.length > 1 ) {
+                // Bounce to the corner
+                v_out_red[0][1] = math.multiply(-1, red_p[1]);
+            }
+
+            red_p = v_out_red[0];
+
+
+            /* HANDEL BLUE PARTICLE */
+
+           start = new Point(blue_p[0]);
+           blue_p[0] = nextPt2(blue_p, collision_time)[0];
+           end = new Point(blue_p[0]);
+            
+           path_col = 'blue'
+
+           path = drawPath(start, end, sc=path_col);
+
+        } else{
+            
+            if(red_wall!=null){
+                drawPath(red_wall.slice(0, 2), red_wall.slice(2, 4), 'red', false);    
+            }
+
+            /* HANDEL blue COLLISION */ 
+            // RED collision happen, use walls plus red 
+            w = walls_plus_red[idx_wall_blue[0]];
+            
+            v_out_blue = vectorOut(blue_p, w);
+            collision_time = v_out_blue[1];
+
+            // DRAW
+            start = new Point(blue_p[0]);
+            end = new Point(v_out_blue[0][0]);
+            
+            path_col = 'blue'
+
+            path = drawPath(start, end, path_col, true, 'blue');
+
+            v_out_blue[0][0] = nextPt2( blue_p, v_out_blue[1] - tol)[0]; // BACK UP just a tad bit 
+            
+            // NEW POS
+            if ( idx_wall_red.length > 1 ) {
+                // Bounce to the corner
+                v_out_blue[0][1] = math.multiply(-1, blue_p[1]);
+            }
+
+            blue_p = v_out_blue[0];
+
+
+            /* HANDEL red PARTICLE */
+
+           start = new Point(red_p[0]);
+           red_p[0] = nextPt2(red_p, collision_time)[0];
+           end = new Point(red_p[0]);
+            
+           path_col = 'red'
+
+           path = drawPath(start, end, sc=path_col);
+    }
+        // ------
+        
+        //v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
+        //t_col = v_out_lst.map(function(x) {return x[1]});
+        //// console.log(t_col);
+        //idx_wall = idxSmallest(t_col);
+        //w = walls[idx_wall[0]];
+        //
+        //v_out = vectorOut(particle, w);
+
+        //// DRAW
+        //start = new Point(particle[0]);
+        //end = new Point(v_out[0][0])
+        //
+        ////path_col = path_col == "red" ? "blue" : "red";
+
+        //path = drawPath(start, end, sc=path_col);
+        //
+        //v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
+
+        //// NEW POS
+        //if ( idx_wall.length > 1 ) {
+        //    // Bounce to the corner
+        //    // v_out[0] = nextPt2( particle, v_out[1] - 3*tol); 
+        //    v_out[0][1] = math.multiply(-1, particle[1]);
+        //}
+
+        //particle = v_out[0];
+
+        //phase potrait
+        //var s_wall = 0
+
+        //for(var i = 0; i < idx_wall; i++){
+        //    s_wall += getDist( walls[i].slice(0, 2), walls[i].slice(2, 4) );
+        //    
+        //}
+
+
+        //s_wall += getDist(w.slice(0, 2), v_out[0][0]);
+        //
+        //var p_wall = s_wall/s_total;
+        //
+
+		//states.push(particle); //append new state
+        //st_lst.push([p_wall, cos_theta_out]);
     }
     plotPod(st_lst);
 }
