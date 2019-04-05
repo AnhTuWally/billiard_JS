@@ -438,10 +438,11 @@ drawRect_tron = function() {
         drawPath(red_wall.slice(0, 2), red_wall.slice(2, 4), 'red', false);    
 
         blue_wall = particle2Wall(blue_p, 100); 
-        drawPath(blue_wall.slice(0, 2), blue_wall.slice(2, 4), 'grey', false);    
+        drawPath(blue_wall.slice(0, 2), blue_wall.slice(2, 4), 'blue', false);    
 
         //console.log(red_wall);
-
+        walls_plus.push(red_wall);
+        walls_plus.push(blue_wall);
         v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
         t_col = v_out_lst.map(function(x) {return x[1]});
         // console.log(t_col);
