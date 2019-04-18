@@ -51,19 +51,26 @@
     </center>
     <table>
         <tr>
-            <td>Initial Position:</td>
-            <td><input type="text" name="position" value="30, 30" id="position"></td>
-        </tr>
-        <tr>
-            <td>Initial Omega:</td>
-            <td><input type="text" name="omega" value="1" id="omega"></td>
             <td>Gamma:</td>
             <td><input type="text" name="gamma" value="0" id="gamma"></td>
         </tr>
+            <td>Initial Position:</td>
+            <td>Red <input type="text" name="position" value="30, 30" id="position"></td>
+            <td>Blue <input type="text" name="position_blue" value="30, -30" id="position_blue"></td>
+        </tr>
+        <tr>
+            <td>Initial Omega:</td>
+            <td>Red <input type="text" name="omega" value="1" id="omega"></td>
+            <td>Blue <input type="text" name="omega_blue" value="1" id="omega_blue"></td>
+        </tr>
         <tr>
             <td>Initial Heading:</td>
-            <td><input type="text" name="heading"  value="(0, 1)" id="heading"></td>
-            <td class="slidecontainer" colspan=2><input type="range" min="0" max="360" value="180" class="slider" id="theta" oninput="slideToVec(this.value)"></td>
+            <td>Red <input type="text" name="heading"  value="(0, 1)" id="heading"></td>
+            <td>Blue <input type="text" name="heading_blue"  value="(0, 1)" id="heading_blue"></td>
+        </tr>
+        <tr>
+            <td class="slidecontainer" colspan=2>Red<input type="range" min="0" max="360" value="180" class="slider" id="theta" oninput="slideToVec(this.value)"></td>
+            <td class="slidecontainer" colspan=2>Blue<input type="range" min="0" max="360" value="180" class="slider" id="theta" oninput="slideToVec_blue(this.value)"></td>
         </tr>
         <tr> 
             <td> Width:</td>

@@ -119,6 +119,26 @@ slideToVec = function(theta){
     //drawVec();
 }
 
+slideToVec_blue = function(theta){
+    theta = 270 - parseInt(theta);	
+		
+	theta = Math.PI * theta / 180;
+    var x = math.cos(theta);
+    var y = math.sin(theta);
+
+    document.getElementById('heading_blue').value = "(" + math.round(x, 3) + ", " + math.round(y,3) + ")";
+
+
+    initial_position_blue = parseCord(document.getElementById('position_blue').value);
+    initial_heading_blue  = [x, y];
+    
+    initial_heading_blue = math.multiply(initial_heading_blue, 30);
+
+    initial_vec_path_blue.segments[1].point = new Point(math.add(initial_position_blue, initial_heading_blue));
+      
+    //drawVec();
+}
+
 /* When the user clicks on the button,
 toggle between hiding and showing the dropdown content */
 function myFunction() {
@@ -437,20 +457,26 @@ parseCord = function(cord){
 drawRect_tron = function() {
     envSetup();
     
+
+    initial_vec_path = drawVector(particle, 30, 'red', true);
+    
+    initial_vec_path_blue = drawVector(particle_blue, 30, 'blue', true);
+
     //  Initialization
     var red_p = particle.slice();
 
-    var blue_p = [[60, 65], [0, 0.5, 0.7]];
+    var blue_p = particle_blue.slice();
 
     w = parseInt(document.getElementById('table_width').value);
 
+	var walls = Object.values(wall_lst).map(function(x) {return x[0]});
     // DRAW RECTANGLE
-    var walls =[
-                    [-w/2, -h/2, w/2, -h/2],
-                    [w/2, -h/2, w/2, h/2],
-                    [w/2, h/2, -w/2, h/2],
-                    [-w/2, h/2, -w/2, -h/2]
-                 ]
+    //var walls =[
+    //                [-w/2, -h/2, w/2, -h/2],
+    //                [w/2, -h/2, w/2, h/2],
+    //                [w/2, h/2, -w/2, h/2],
+    //                [-w/2, h/2, -w/2, -h/2]
+    //             ]
 
     var s_total = 0
 
@@ -492,21 +518,52 @@ drawRect_tron = function() {
             }
         } 
         
+        // SPLIT UP CASES
+
         // handle red collisions with walls plus blue
         v_out_lst_red = walls_plus_blue.map(function(wall) {return vectorOut(red_p, wall)});
         t_col_red = v_out_lst_red.map(function(x) {return x[1]});
+        
+        // Collision time between red particle and blue wall
+        var t_rb = t_col_red[t_col_red.length-1] 
+
         idx_wall_red = idxSmallest(t_col_red);
         t_red = t_col_red[idx_wall_red];
 
         // handle blue collision with walls plus red
         v_out_lst_blue = walls_plus_red.map(function(wall) {return vectorOut(blue_p, wall)});
+
         t_col_blue = v_out_lst_blue.map(function(x) {return x[1]});
+        // Collision time between blue particle and red wall
+        var t_br = t_col_blue[t_col_blue.length-1] 
+
         idx_wall_blue = idxSmallest(t_col_blue);
         t_blue = t_col_blue[idx_wall_blue];
         
-        console.log('time ', t_red, ' - ', t_blue);
-        if(t_red < t_blue){
+        // Red and blue collision
+        
+        // WORK ON THIS
+        var min_t_rb = t_rb < t_br ? t_rb : t_br
+        
+        // Alternate
+        var alt_rb = false;
+        var alt_br = false;
 
+        if(min_t_rb != -1){
+            if(min_t_rb == t_red){
+                alt_rb = true; 
+                t_red  +=t_blue;
+            }else if(min_t_rb == t_blue){
+                t_blue +=t_red;
+                alt_br = true;
+            }
+        }
+        
+        // --------------------------------------- 
+
+        console.log('time ', t_red, ' - ', t_blue, ' - ', alt_rb);
+
+        if(t_red < t_blue){
             if(blue_wall!=null){
                 drawPath(blue_wall.slice(0, 2), blue_wall.slice(2, 4), 'blue', false);    
 
@@ -514,12 +571,15 @@ drawRect_tron = function() {
             /* HANDEL RED COLLISION */ 
             // RED collision happen, use walls plus blue
             w = walls_plus_blue[idx_wall_red[0]];
-            
-            console.log(idx_wall_red);
 
             v_out_red = vectorOut(red_p, w);
-            collision_time = v_out_red[1];
-            //
+
+            collision_time = alt_br ? t_blue - t_red: v_out_red[1];
+            
+            if(alt_br){
+                v_out_red[0][1] = red_p[1];
+            }
+            
             // DRAW
             start = new Point(red_p[0]);
             end = new Point(v_out_red[0][0]);
@@ -528,9 +588,8 @@ drawRect_tron = function() {
 
             path = drawPath(start, end, path_col, true, 'red');
             
-            v_out_red[0][0] = nextPt2( red_p, v_out_red[1] - tol)[0]; // BACK UP just a tad bit 
+            v_out_red[0][0] = nextPt2(red_p, collision_time - tol)[0]; // BACK UP just a tad bit 
             
-            console.log(v_out_red);
             // NEW POS
             if ( idx_wall_red.length > 1 ) {
                 // Bounce to the corner
@@ -541,7 +600,6 @@ drawRect_tron = function() {
 
 
             /* HANDEL BLUE PARTICLE */
-
            start = new Point(blue_p[0]);
            blue_p[0] = nextPt2(blue_p, collision_time)[0];
            end = new Point(blue_p[0]);
@@ -550,7 +608,7 @@ drawRect_tron = function() {
 
            path = drawPath(start, end, sc=path_col);
 
-        } else{
+        }else{
             
             if(red_wall!=null){
                 drawPath(red_wall.slice(0, 2), red_wall.slice(2, 4), 'red', false);    
@@ -561,8 +619,13 @@ drawRect_tron = function() {
             w = walls_plus_red[idx_wall_blue[0]];
             
             v_out_blue = vectorOut(blue_p, w);
-            collision_time = v_out_blue[1];
 
+            collision_time = alt_rb ? t_red - t_blue: v_out_blue[1];
+
+            if(alt_rb){
+                v_out_blue[0][1] = blue_p[1];
+            }
+            
             // DRAW
             start = new Point(blue_p[0]);
             end = new Point(v_out_blue[0][0]);
@@ -571,7 +634,7 @@ drawRect_tron = function() {
 
             path = drawPath(start, end, path_col, true, 'blue');
 
-            v_out_blue[0][0] = nextPt2( blue_p, v_out_blue[1] - tol)[0]; // BACK UP just a tad bit 
+            v_out_blue[0][0] = nextPt2( blue_p, collision_time - tol)[0]; // BACK UP just a tad bit 
             
             // NEW POS
             if ( idx_wall_red.length > 1 ) {
@@ -933,16 +996,25 @@ envSetup = function(){
 	
     initial_position = parseCord(document.getElementById('position').value);
 
+    initial_position_blue = parseCord(document.getElementById('position_blue').value);
+    
     //var min_max = window_size.sort();
     var gamma = parseFloat(document.getElementById('gamma').value);
     ker = no_slip_ker(gamma); // change kernel here
 
-    initial_omega  = parseInt(document.getElementById('omega').value);
+    initial_omega  = parseInt(document.getElementById('omega').value)
     initial_heading  = parseCord(document.getElementById('heading').value);
     
+    initial_omega_blue  = parseInt(document.getElementById('omega_blue').value)
+    initial_heading_blue  = parseCord(document.getElementById('heading_blue').value);
+
     initial_wv = normalize([initial_omega, initial_heading[0], initial_heading[1]]);
 
+    initial_wv_blue = normalize([initial_omega_blue, initial_heading_blue[0], initial_heading_blue[1]]);
+
     particle = [ initial_position, initial_wv];
+
+    particle_blue = [ initial_position_blue, initial_wv_blue];
 
     initial_vec_path = drawVector(particle, 30, '#d3d3d3', true);
 
@@ -1092,8 +1164,8 @@ drawCord = function(){
 
 window.onload = function() {
   	envSetup();
-	addWall0('-200, 0, 120, -100');
-	addWall0('120, -100, 100, 50');
-	addWall0('100, 50, -200, 0');
+	addWall0('-300, 0, 120, -200');
+	addWall0('120, -200, 300, 200');
+	addWall0('300, 200, -300, 0');
     drawRect_tron();
 }
