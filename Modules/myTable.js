@@ -457,7 +457,6 @@ parseCord = function(cord){
 drawRect_tron = function() {
     envSetup();
     
-
     initial_vec_path = drawVector(particle, 30, 'red', true);
     
     initial_vec_path_blue = drawVector(particle_blue, 30, 'blue', true);
@@ -470,6 +469,7 @@ drawRect_tron = function() {
     w = parseInt(document.getElementById('table_width').value);
 
 	var walls = Object.values(wall_lst).map(function(x) {return x[0]});
+    
     // DRAW RECTANGLE
     //var walls =[
     //                [-w/2, -h/2, w/2, -h/2],
@@ -493,7 +493,9 @@ drawRect_tron = function() {
     var path_col = "grey";
 
 	states = [];  //reset states
-    st_lst = [];
+    st_lst_r = [];
+    st_lst_b = [];
+    
 	// console.log(walls);
     // BEGIN LOOP
     
@@ -561,7 +563,7 @@ drawRect_tron = function() {
         
         // --------------------------------------- 
 
-        console.log('time ', t_red, ' - ', t_blue, ' - ', alt_rb);
+        //console.log('time ', t_red, ' - ', t_blue, ' - ', alt_rb);
 
         if(t_red < t_blue){
             if(blue_wall!=null){
@@ -607,6 +609,21 @@ drawRect_tron = function() {
            path_col = 'blue'
 
            path = drawPath(start, end, sc=path_col);
+
+            //phase potrait
+            var s_wall = 0
+            
+            if(idx_wall_red < 4){
+                for(var i = 0; i < idx_wall_red; i++){
+                    s_wall += getDist(walls[i].slice(0, 2), walls[i].slice(2, 4) );
+                }
+                
+                s_wall += getDist(w.slice(0, 2), v_out_red[0][0]);
+                
+                var p_wall = s_wall/s_total;
+
+                st_lst_r.push([p_wall, cos_theta_out]);
+            }
 
         }else{
             
@@ -668,56 +685,11 @@ drawRect_tron = function() {
                 
                 var p_wall = s_wall/s_total;
 
-                st_lst.push([p_wall, cos_theta_out]);
+                st_lst_b.push([p_wall, cos_theta_out]);
             }
+        }
     }
-        // ------
-        
-        //v_out_lst = walls.map(function(wall) {return vectorOut(particle, wall)});
-        //t_col = v_out_lst.map(function(x) {return x[1]});
-        //// console.log(t_col);
-        //idx_wall = idxSmallest(t_col);
-        //w = walls[idx_wall[0]];
-        //
-        //v_out = vectorOut(particle, w);
-
-        //// DRAW
-        //start = new Point(particle[0]);
-        //end = new Point(v_out[0][0])
-        //
-        ////path_col = path_col == "red" ? "blue" : "red";
-
-        //path = drawPath(start, end, sc=path_col);
-        //
-        //v_out[0][0] = nextPt2( particle, v_out[1] - tol)[0]; // BACK UP just a tad bit 
-
-        //// NEW POS
-        //if ( idx_wall.length > 1 ) {
-        //    // Bounce to the corner
-        //    // v_out[0] = nextPt2( particle, v_out[1] - 3*tol); 
-        //    v_out[0][1] = math.multiply(-1, particle[1]);
-        //}
-
-        //particle = v_out[0];
-
-        //phase potrait
-        //var s_wall = 0
-
-        //for(var i = 0; i < idx_wall; i++){
-        //    s_wall += getDist( walls[i].slice(0, 2), walls[i].slice(2, 4) );
-        //    
-        //}
-
-
-        //s_wall += getDist(w.slice(0, 2), v_out[0][0]);
-        //
-        //var p_wall = s_wall/s_total;
-        //
-
-		//states.push(particle); //append new state
-        //st_lst.push([p_wall, cos_theta_out]);
-    }
-    plotPod(st_lst);
+    plotPod_rb(st_lst_r, st_lst_b);
 }
 
 drawRect = function() {
@@ -800,7 +772,7 @@ drawRect = function() {
 		states.push(particle); //append new state
         st_lst.push([p_wall, cos_theta_out]);
     }
-    plotPod(st_lst);
+    plotPod(st_lst, []);
 }
 
 
@@ -812,7 +784,8 @@ plotPod = function(dat){
 	    data: {
 	        datasets: [{
 	            label: 'Phase Potrait',
-                data: []
+                data: [],
+                backgroundColor: []
 	        }]
 	    },
 	    options: {
@@ -853,6 +826,68 @@ plotPod = function(dat){
         var temp = dat[i];
         scatterChart.data.datasets[0].data.push({x: temp[0], y: temp[1]});
     }
+    scatterChart.update();
+}
+
+plotPod_rb = function(dat_r, dat_b){
+    ctx = document.getElementById('chart_canvas').getContext('2d');
+    
+    var data_lst = [];
+    var data_col_lst = [];
+
+	scatterChart = new Chart(ctx, {
+	    type: 'scatter',
+	    data: {
+	        datasets: [{
+	            label: 'Phase Potrait',
+                data: data_lst,
+                pointBackgroundColor: data_col_lst
+	        }]
+	    },
+	    options: {
+	        scales: {
+	            xAxes: [{
+                    scaleLabel:{
+                        display:true,
+                        labelString: 's'
+                    },
+	                type: 'linear',
+	                position: 'bottom',
+					ticks:{
+						max:1,
+                        min:0,
+                        stepSize: 0.1
+					}
+	            }],
+	            yAxes: [{
+                    scaleLabel:{
+                        display:true,
+                        labelString: 'theta'
+                    },
+	                type: 'linear',
+	                position: 'bottom',
+					ticks:{
+						max:1.8,
+                        min:-1.8,
+                        stepSize: 0.5
+					}
+	            }]
+	        }
+	    }
+	});
+
+    for(var i=0; i<dat_r.length; i++){
+        var temp = dat_r[i];
+        data_lst.push({x: temp[0], y: temp[1]});
+        data_col_lst.push('red');
+    }
+    
+    for(var i=0; i<dat_b.length; i++){
+        var temp = dat_b[i];
+        data_lst.push({x: temp[0], y: temp[1]});
+        data_col_lst.push('blue');
+    }
+
     scatterChart.update();
 }
 
