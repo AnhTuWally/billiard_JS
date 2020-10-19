@@ -5,4 +5,4 @@ http://paperjs.org
 
 https://www.robinwieruch.de/linear-algebra-matrix-javascript/
 
-http://tu-nguyen.com/billiard_JS
+http://tunguyen17.github.io/billiard_JS/
